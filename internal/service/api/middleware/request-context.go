@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/api/reqcontext"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/api/reqcontext"
 )
 
 // RequestContextLogger returns a Gin middleware that:

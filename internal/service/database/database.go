@@ -3,7 +3,7 @@ Package database is the middleware between the app database and the code. All da
 persistent database are handled here. Database specific logic should never escape this package.
 
 To use this package you need to apply migrations to the database if needed/wanted, connect to it (using the database
-data source name from config), and then initialize an instance of AppDatabase from the DB connection.
+data source name from demo), and then initialize an instance of AppDatabase from the DB connection.
 
 For example, this code adds a parameter in `webapi` executable for the database data source name (add it to the
 main.WebAPIConfiguration structure):
@@ -33,13 +33,18 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 )
+
+// ErrNotFound is returned when a requested row does not exist.
+var ErrNotFound = errors.New("not found")
 
 // AppDatabase is the high level interface for the DB
 type AppDatabase interface {
-	GetName() (string, error)
-	SetName(name string) error
+	GetNameByID(id int64) (string, error)
+
+	UpdateNameByID(id int64, name string) error
+	CreateName(name string) (int64, error)
+	DeleteNameByID(id int64) error
 
 	Ping() error
 }
@@ -55,20 +60,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 		return nil, errors.New("database is required when building a AppDatabase")
 	}
 
-	// Check if table exists. If not, the database is empty, and we need to create the structure
-	var tableName string
-	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='example_table';`).Scan(&tableName)
-	if errors.Is(err, sql.ErrNoRows) {
-		sqlStmt := `CREATE TABLE example_table (id INTEGER NOT NULL PRIMARY KEY, name TEXT);`
-		_, err = db.Exec(sqlStmt)
-		if err != nil {
-			return nil, fmt.Errorf("error creating database structure: %w", err)
-		}
-	}
-
-	return &appdbimpl{
-		c: db,
-	}, nil
+	return &appdbimpl{c: db}, nil
 }
 
 func (db *appdbimpl) Ping() error {

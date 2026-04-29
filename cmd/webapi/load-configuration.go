@@ -17,7 +17,7 @@ const prefix = "API"
 // loadConfiguration and values from flags, environment variable or configuration file will be loaded.
 type WebAPIConfiguration struct {
 	Config struct {
-		Path string `conf:"default:/conf/config.yml,short:c,help:path to the YAML configuration file"`
+		Path string `conf:"default:/config/config.yml,short:c,help:path to the YAML configuration file"`
 	}
 	Web struct {
 		APIHost         string        `conf:"default:0.0.0.0:3000,short:H,help:host:port the REST API server listens on"`
@@ -52,26 +52,26 @@ type WebAPIConfiguration struct {
 func loadConfiguration() (WebAPIConfiguration, error) {
 	var cfg WebAPIConfiguration
 
-	// First pass: parse env/flags to discover the config file path.
+	// First pass: parse env/flags to discover the demo file path.
 	help, err := conf.ParseWithOptions(prefix, &cfg, conf.WithStrictFlags())
 	if err != nil {
 		if errors.Is(err, conf.ErrHelpWanted) {
 			fmt.Println(help) //nolint:forbidigo
 			return cfg, conf.ErrHelpWanted
 		}
-		return cfg, fmt.Errorf("parsing config: %w", err)
+		return cfg, fmt.Errorf("parsing demo: %w", err)
 	}
 
-	// If a YAML config file exists, re-parse supplying the YAML data (useful in k8s/compose).
+	// If a YAML demo file exists, reparse supplying the YAML data (useful in k8s/compose).
 	// YAML is applied before env vars and flags, so env/flags take precedence.
 	fp, err := os.Open(cfg.Config.Path)
 	if err != nil && !os.IsNotExist(err) {
-		return cfg, fmt.Errorf("can't read the config file, while it exists: %w", err)
+		return cfg, fmt.Errorf("can't read the demo file, while it exists: %w", err)
 	} else if err == nil {
 		yamlFile, err := io.ReadAll(fp)
 		_ = fp.Close()
 		if err != nil {
-			return cfg, fmt.Errorf("can't read config file: %w", err)
+			return cfg, fmt.Errorf("can't read demo file: %w", err)
 		}
 		help, err = conf.Parse(prefix, &cfg, yaml.WithData(yamlFile))
 		if err != nil {
@@ -79,7 +79,7 @@ func loadConfiguration() (WebAPIConfiguration, error) {
 				fmt.Println(help) //nolint:forbidigo
 				return cfg, conf.ErrHelpWanted
 			}
-			return cfg, fmt.Errorf("parsing config with yaml: %w", err)
+			return cfg, fmt.Errorf("parsing demo with yaml: %w", err)
 		}
 	}
 

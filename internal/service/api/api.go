@@ -35,8 +35,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/api/middleware"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/database"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/database"
 )
 
 // Config provides dependencies and configuration to New.
@@ -81,17 +80,16 @@ func New(cfg Config) (Router, error) {
 	}
 
 	engine.Use(cors.New(cfg.CORS))
-	engine.Use(middleware.RequestContextLogger(cfg.Logger))
 	engine.Use(gin.Recovery())
 
-	return &_router{
+	return &router{
 		engine:     engine,
 		baseLogger: cfg.Logger,
 		db:         cfg.Database,
 	}, nil
 }
 
-type _router struct {
+type router struct {
 	engine     *gin.Engine
 	baseLogger *slog.Logger
 	db         database.AppDatabase

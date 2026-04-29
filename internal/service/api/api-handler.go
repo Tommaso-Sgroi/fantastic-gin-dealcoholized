@@ -5,34 +5,36 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/api/handler"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/api/middleware"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/api/reqcontext"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/api/handler"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/api/middleware"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/api/reqcontext"
 )
 
 // Handler builds the HTTP handler for the API. It wires up middleware,
 // creates the business-logic handler, and registers every route.
-func (rt *_router) Handler() http.Handler {
-	// Create the (framework-agnostic) handler that holds all dependencies.
+func (rt *router) Handler() http.Handler {
 	h := handler.New(rt.db)
 
-	// Global middleware — runs before every route.
+	// add a contex logger to log more info
 	rt.engine.Use(middleware.RequestContextLogger(rt.baseLogger))
 
 	// --- routes --------------------------------------------------------
-	rt.engine.GET("/", rt.wrap(h.GetHelloWorld))
-	rt.engine.GET("/liveness", rt.wrap(h.Liveness))
+	rt.engine.GET("/name/:id", rt.wrap(h.GetNameByID))
+	rt.engine.POST("/name", rt.wrap(h.PostNewName))
+	rt.engine.PUT("/name/:id", rt.wrap(h.PutNameByID))
+	rt.engine.DELETE("/name/:id", rt.wrap(h.DeleteNameByID))
+
+	rt.engine.GET("/healthz", rt.wrap(h.Liveness))
 
 	return rt.engine
 }
 
 // wrap adapts a framework-agnostic API handler to Gin.
-func (rt *_router) wrap(fn handler.APIHandlerFunc) gin.HandlerFunc {
+func (rt *router) wrap(fn handler.WebAPIHandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		reqCtx := reqcontext.GetRequestContext(c)
 
 		if reqCtx.Logger == nil {
-			// fallback
 			reqCtx.Logger = rt.baseLogger.With(
 				slog.String("WARNING", "Request context is missing logger, falling back to default logger"),
 				slog.String("request-id", reqCtx.ReqUUID.String()),

@@ -40,8 +40,8 @@ import (
 	"github.com/ardanlabs/conf/v3"
 	"github.com/gin-contrib/cors"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/api"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/database"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/api"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/database"
 )
 
 // main is the program entry point. The only purpose of this function is to call run() and set the exit code if there is
