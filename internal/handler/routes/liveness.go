@@ -11,7 +11,7 @@ import (
 func (h *WebAPIHandler) Liveness(w http.ResponseWriter, r *http.Request, _ PathParameters, ctx *reqcontext.RequestContext) {
 	if err := h.Health.Liveness(r.Context()); err != nil {
 		ctx.Logger.Error("liveness check failed", "err", err)
-		jsonError(w, http.StatusInternalServerError, "database unreachable", err)
+		jsonError(w, http.StatusInternalServerError, "database unreachable")
 		return
 	}
 	w.WriteHeader(http.StatusOK)

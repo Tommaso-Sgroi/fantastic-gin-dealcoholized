@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/errs"
 )
 
 // NameRepository is the persistence contract that the domain requires.
 // It is implemented by the database layer. The domain never imports database/sql
 // directly — the repository hides all storage details.
 type NameRepository interface {
-	GetNameByID(id int64) (string, error)
-	CreateName(name string) (int64, error)
-	UpdateNameByID(id int64, name string) error
-	DeleteNameByID(id int64) error
+	GetNameByID(ctx context.Context, id int64) (string, error)
+	CreateName(ctx context.Context, name string) (int64, error)
+	UpdateNameByID(ctx context.Context, id int64, name string) error
+	DeleteNameByID(ctx context.Context, id int64) error
 }
 
 // NameService defines the business operations available on Name entities.
@@ -49,37 +51,37 @@ func NewNameService(repo NameRepository) NameService {
 	return &nameService{repo: repo}
 }
 
-func (s *nameService) GetByID(_ context.Context, id int64) (Name, error) {
-	value, err := s.repo.GetNameByID(id)
+func (s *nameService) GetByID(ctx context.Context, id int64) (Name, error) {
+	value, err := s.repo.GetNameByID(ctx, id)
 	if err != nil {
 		return Name{}, fmt.Errorf("cannot find %d in db: %w", id, err)
 	}
 	return Name{ID: id, Value: value}, nil
 }
 
-func (s *nameService) Create(_ context.Context, value string) (Name, error) {
+func (s *nameService) Create(ctx context.Context, value string) (Name, error) {
 	if err := validateName(value); err != nil {
 		return Name{}, fmt.Errorf("Create: %w", err)
 	}
-	id, err := s.repo.CreateName(value)
+	id, err := s.repo.CreateName(ctx, value)
 	if err != nil {
 		return Name{}, fmt.Errorf("Create: %w", err)
 	}
 	return Name{ID: id, Value: value}, nil
 }
 
-func (s *nameService) UpdateByID(_ context.Context, id int64, value string) (Name, error) {
+func (s *nameService) UpdateByID(ctx context.Context, id int64, value string) (Name, error) {
 	if err := validateName(value); err != nil {
 		return Name{}, fmt.Errorf("UpdateByID id=%d: %w", id, err)
 	}
-	if err := s.repo.UpdateNameByID(id, value); err != nil {
+	if err := s.repo.UpdateNameByID(ctx, id, value); err != nil {
 		return Name{}, fmt.Errorf("UpdateByID id=%d: %w", id, err)
 	}
 	return Name{ID: id, Value: value}, nil
 }
 
-func (s *nameService) DeleteByID(_ context.Context, id int64) error {
-	if err := s.repo.DeleteNameByID(id); err != nil {
+func (s *nameService) DeleteByID(ctx context.Context, id int64) error {
+	if err := s.repo.DeleteNameByID(ctx, id); err != nil {
 		return fmt.Errorf("DeleteByID id=%d: %w", id, err)
 	}
 	return nil
@@ -88,10 +90,10 @@ func (s *nameService) DeleteByID(_ context.Context, id int64) error {
 // validateName enforces domain-level invariants on a Name value.
 func validateName(value string) error {
 	if strings.TrimSpace(value) == "" {
-		return fmt.Errorf("name cannot be empty or whitespace: %w", ErrInvalidInput)
+		return fmt.Errorf("name cannot be empty or whitespace: %w", errs.ErrInvalidInput)
 	}
 	if len(value) > maxNameLength {
-		return fmt.Errorf("name exceeds %d characters: %w", maxNameLength, ErrInvalidInput)
+		return fmt.Errorf("name exceeds %d characters: %w", maxNameLength, errs.ErrInvalidInput)
 	}
 	return nil
 }

@@ -19,18 +19,19 @@ Usage:
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 )
 
 // AppDatabase is the full set of persistence operations exposed by this package.
 type AppDatabase interface {
-	GetNameByID(id int64) (string, error)
-	UpdateNameByID(id int64, name string) error
-	CreateName(name string) (int64, error)
-	DeleteNameByID(id int64) error
+	GetNameByID(ctx context.Context, id int64) (string, error)
+	UpdateNameByID(ctx context.Context, id int64, name string) error
+	CreateName(ctx context.Context, name string) (int64, error)
+	DeleteNameByID(ctx context.Context, id int64) error
 
-	Ping() error
+	Ping(ctx context.Context) error
 }
 
 type appdbimpl struct {
@@ -46,6 +47,6 @@ func New(db *sql.DB) (AppDatabase, error) {
 	return &appdbimpl{c: db}, nil
 }
 
-func (db *appdbimpl) Ping() error {
-	return db.c.Ping()
+func (db *appdbimpl) Ping(ctx context.Context) error {
+	return db.c.PingContext(ctx)
 }

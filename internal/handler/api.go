@@ -15,7 +15,7 @@ Example:
 		HealthService: healthService,
 	})
 	if err != nil {
-		return fmt.Errorf("domainerr creating the API server instance: %w", err)
+		return fmt.Errorf("error creating the API server instance: %w", err)
 	}
 
 	apiserver := http.Server{

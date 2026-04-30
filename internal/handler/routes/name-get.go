@@ -13,18 +13,18 @@ import (
 func (h *WebAPIHandler) GetNameByID(w http.ResponseWriter, r *http.Request, pr PathParameters, ctx *reqcontext.RequestContext) {
 	id, err := strconv.ParseInt(pr["id"], 10, 64)
 	if err != nil {
-		jsonError(w, http.StatusBadRequest, "invalid id", err)
+		jsonError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
 	n, err := h.Names.GetByID(r.Context(), id)
 	if errors.Is(err, errs.ErrNotFound) {
-		jsonError(w, http.StatusNotFound, "not found", err)
+		jsonError(w, http.StatusNotFound, "not found")
 		return
 	}
 	if err != nil {
 		ctx.Logger.Error("GetNameByID service error", "err", err)
-		jsonError(w, http.StatusInternalServerError, "internal server error", err)
+		jsonError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 

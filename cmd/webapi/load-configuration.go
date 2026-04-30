@@ -40,7 +40,7 @@ type WebAPIConfiguration struct {
 		Filename string `conf:"default:/tmp/decaf.db,help:path to the SQLite database file"`
 	}
 	Logger struct {
-		Level string `conf:"default:info,help:log level (debug, info, warn, domainerr)"`
+		Level string `conf:"default:info,help:log level (debug, info, warn, error)"`
 		File  string `conf:"default:/tmp/dealch.log,help:path to the log file"`
 	}
 }

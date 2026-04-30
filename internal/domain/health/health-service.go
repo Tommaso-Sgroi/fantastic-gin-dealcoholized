@@ -4,12 +4,12 @@ import "context"
 
 // Pinger is the minimal persistence contract needed for health checks.
 type Pinger interface {
-	Ping() error
+	Ping(ctx context.Context) error
 }
 
 // HealthService reports the operational status of the application.
 type HealthService interface {
-	// Liveness returns a non-nil domainerr when the application cannot serve requests
+	// Liveness returns a non-nil error when the application cannot serve requests
 	// (e.g., the database is unreachable).
 	Liveness(ctx context.Context) error
 }
@@ -23,6 +23,6 @@ func NewHealthService(pinger Pinger) HealthService {
 	return &healthService{pinger: pinger}
 }
 
-func (s *healthService) Liveness(_ context.Context) error {
-	return s.pinger.Ping()
+func (s *healthService) Liveness(ctx context.Context) error {
+	return s.pinger.Ping(ctx)
 }

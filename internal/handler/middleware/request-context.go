@@ -25,7 +25,7 @@ func RequestContextLogger(logger *slog.Logger) gin.HandlerFunc {
 
 		requestID, err := uuid.NewV4()
 		if err != nil {
-			logger.Error("cannot generate a random UUIDv4", slog.Any("domainerr", err))
+			logger.Error("cannot generate a random UUIDv4", slog.Any("error", err))
 			requestID = uuid.Nil
 		}
 

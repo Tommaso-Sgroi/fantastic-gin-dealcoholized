@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/errs"
@@ -8,8 +9,8 @@ import (
 
 // UpdateNameByID updates the name for the given id.
 // Returns errs.ErrNotFound if no row matched.
-func (db *appdbimpl) UpdateNameByID(id int64, n string) error {
-	res, err := db.c.Exec(`UPDATE example_table SET name=? WHERE id=?`, n, id)
+func (db *appdbimpl) UpdateNameByID(ctx context.Context, id int64, n string) error {
+	res, err := db.c.ExecContext(ctx, `UPDATE example_table SET name=? WHERE id=?`, n, id)
 	if err != nil {
 		return fmt.Errorf("UpdateNameByID id=%d: %w", id, err)
 	}
