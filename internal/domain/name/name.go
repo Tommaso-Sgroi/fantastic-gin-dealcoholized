@@ -1,5 +1,5 @@
 /*
-Package domain contains the core business entities, interfaces and rules of the application.
+Package name contains the core business entities, interfaces and rules of the application.
 It has no dependency on any framework or infrastructure concern (no Gin, no SQL, no HTTP).
 
 Domain errors are defined here so that service implementations and handlers share the same

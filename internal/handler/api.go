@@ -52,7 +52,7 @@ type Config struct {
 	TrustedProxies []string
 
 	// NameService is the domain service for Name operations.
-	NameService name.NameService
+	NameService name.ServiceName
 
 	// HealthService is the domain service for health checks.
 	HealthService health.HealthService
@@ -104,6 +104,6 @@ func New(cfg Config) (Router, error) {
 type _router struct {
 	engine        *gin.Engine
 	baseLogger    *slog.Logger
-	nameService   name.NameService
+	nameService   name.ServiceName
 	healthService health.HealthService
 }

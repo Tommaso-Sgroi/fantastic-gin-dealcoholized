@@ -24,23 +24,13 @@ import (
 	"errors"
 )
 
-// AppDatabase is the full set of persistence operations exposed by this package.
-type AppDatabase interface {
-	GetNameByID(ctx context.Context, id int64) (string, error)
-	UpdateNameByID(ctx context.Context, id int64, name string) error
-	CreateName(ctx context.Context, name string) (int64, error)
-	DeleteNameByID(ctx context.Context, id int64) error
-
-	Ping(ctx context.Context) error
-}
-
 type appdbimpl struct {
 	c *sql.DB
 }
 
-// New returns a new AppDatabase backed by the provided *sql.DB.
+// New returns a new Repository backed by the provided *sql.DB.
 // Returns an error if db is nil.
-func New(db *sql.DB) (AppDatabase, error) {
+func New(db *sql.DB) (Repository, error) {
 	if db == nil {
 		return nil, errors.New("sql.DB is required")
 	}
