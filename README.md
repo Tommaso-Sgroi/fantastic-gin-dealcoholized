@@ -33,14 +33,30 @@ All error responses are JSON: `{"error": "<message>"}`.
 * `db/` contains the SQL migration files
 * `doc/` contains the OpenAPI 3.1 specification (`api.yaml`)
 * `internal/` has all packages for implementing project-specific functionalities
-	* `service/api` contains the Gin router, middleware, and all HTTP handlers
-	* `service/database` contains the SQLite database layer
+	* `domain/` contains business entities and use-cases (for example the `name` and `health` domain packages)
+	* `handler/` contains the HTTP transport layer (Gin router, middleware, request context, and route handlers)
+	* `repository/` contains the persistence layer (SQLite queries and data access)
+	* `errs/` contains shared application-level sentinel errors used to disambiguate failures across layers
 * `vendor/` is managed by Go, and contains a copy of all dependencies
 * `webui/` is a Vue.js web frontend; it includes:
 	* Bootstrap JavaScript framework
 	* a customized version of "Bootstrap dashboard" template
 	* feather icons as SVG
 	* Go code for release embedding
+
+### Layered approach (brief)
+
+The backend follows a simple layered approach:
+
+* **HTTP layer (`internal/handler`)** receives requests, decodes/encodes JSON and maps domain errors to HTTP status codes.
+* **Domain layer (`internal/domain`)** contains business rules and use-case orchestration, independent from underlying technology stack: Gin and SQLite.
+* **Repository layer (`internal/repository`)** handles storage details and SQL queries.
+
+Typical flow:
+
+`HTTP request -> handler/routes -> domain use-case -> repository -> SQLite`
+
+Dependencies are one-way, and shared error sentinels live in `internal/errs` so `errors.Is(...)` works consistently through wrapped errors.
 
 Other project files include:
 * `open-node.sh` starts a temporary container using the `node:20` image for safe web frontend development
