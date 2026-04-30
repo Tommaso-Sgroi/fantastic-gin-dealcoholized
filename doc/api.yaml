@@ -199,7 +199,7 @@ components:
       properties:
         error:
           type: string
-          description: Human-readable description of the error
+          description: Human-readable description of the domainerr
           example: "not found"
 
   parameters:
@@ -245,16 +245,16 @@ components:
             error: "not found"
 
     InternalServerError:
-      description: An unexpected server-side error occurred. Check server logs for details.
+      description: An unexpected server-side domainerr occurred. Check server logs for details.
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
           examples:
             generic:
-              summary: Generic server error
+              summary: Generic server domainerr
               value:
-                error: "internal server error"
+                error: "internal server domainerr"
             dbUnreachable:
               summary: Database unreachable (liveness probe)
               value:

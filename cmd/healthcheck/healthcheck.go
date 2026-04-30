@@ -18,7 +18,7 @@ Return values (exit codes):
 		The request was successful (HTTP 200 or HTTP 204)
 
 	> 0
-		The request was not successful (connection error or unexpected HTTP status code)
+		The request was not successful (connection domainerr or unexpected HTTP status code)
 */
 package main
 

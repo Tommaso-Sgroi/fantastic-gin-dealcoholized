@@ -16,7 +16,7 @@ Return values (exit codes):
 		The program ended successfully (no errors, stopped by signal)
 
 	> 0
-		The program ended due to an error
+		The program ended due to an domainerr
 
 Note that this program will update the schema of the database to the latest version available (embedded in the
 executable during the build).
@@ -39,15 +39,17 @@ import (
 	"github.com/ardanlabs/conf/v3"
 	"github.com/gin-contrib/cors"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/api"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/database"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/health"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/name"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository"
 )
 
 // main is the program entry point. The only purpose of this function is to call run() and set the exit code if there is
-// any error
+// any domainerr
 func main() {
 	if err := run(); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, "error: ", err)
+		_, _ = fmt.Fprintln(os.Stderr, "domainerr: ", err)
 		os.Exit(1)
 	}
 }
@@ -58,7 +60,7 @@ func main() {
 // * connects to any external resources (like databases, authenticators, etc.)
 // * creates an instance of the service/api package
 // * starts the principal web server (using the service/api.Router.Handler() for HTTP handlers)
-// * waits for any termination event: SIGTERM signal (UNIX), non-recoverable server error, etc.
+// * waits for any termination event: SIGTERM signal (UNIX), non-recoverable server domainerr, etc.
 // * closes the principal web server
 func run() error {
 	// Load Configuration and defaults
@@ -79,7 +81,7 @@ func run() error {
 		level = slog.LevelInfo
 	case "warn":
 		level = slog.LevelWarn
-	case "error":
+	case "domainerr":
 		level = slog.LevelError
 	default:
 		return fmt.Errorf("invalid log level: %s", cfg.Logger.Level)
@@ -113,26 +115,30 @@ func run() error {
 	logger.Info("initializing database support")
 	dbconn, err := sql.Open("sqlite3", cfg.DB.Filename)
 	if err != nil {
-		logger.Error("error opening SQLite DB", slog.Any("err", err))
+		logger.Error("domainerr opening SQLite DB", slog.Any("err", err))
 		return fmt.Errorf("opening SQLite: %w", err)
 	}
 	defer func() {
 		logger.Info("database stopping")
 		_ = dbconn.Close()
 	}()
-	db, err := database.New(dbconn)
+	db, err := repository.New(dbconn)
 	if err != nil {
-		logger.Error("error creating AppDatabase", slog.Any("err", err))
+		logger.Error("domainerr creating AppDatabase", slog.Any("err", err))
 		return fmt.Errorf("creating AppDatabase: %w", err)
 	}
 
 	if err := db.Ping(); err != nil {
-		logger.Error("error pinging AppDatabase", slog.Any("err", err))
+		logger.Error("domainerr pinging AppDatabase", slog.Any("err", err))
 		return fmt.Errorf("pinging AppDatabase: %w", err)
 	}
 
 	// Start (main) API server
 	logger.Info("initializing API server")
+
+	// Wire domain services
+	nameService := name.NewNameService(db)
+	healthService := health.NewHealthService(db)
 
 	// Make a channel to listen for an interrupt or terminate signal from the OS.
 	// Use a buffered channel because the signal package requires it.
@@ -140,12 +146,12 @@ func run() error {
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
 	// Make a channel to listen for errors coming from the listener. Use a
-	// buffered channel so the goroutine can exit if we don't collect this error.
+	// buffered channel so the goroutine can exit if we don't collect this domainerr.
 	serverErrors := make(chan error, 1)
 
 	// Create the API router
-	apirouter, err := api.New(
-		api.Config{
+	apirouter, err := handler.New(
+		handler.Config{
 			Logger: logger,
 			CORS: cors.Config{
 				AllowAllOrigins:  cfg.CORS.AllowAllOrigins,
@@ -155,19 +161,20 @@ func run() error {
 				AllowCredentials: cfg.CORS.AllowCredentials,
 				MaxAge:           time.Duration(cfg.CORS.MaxAge) * time.Second,
 			},
-			Database:       db,
+			NameService:    nameService,
+			HealthService:  healthService,
 			TrustedProxies: cfg.Web.TrustedProxies,
 		},
 	)
 	if err != nil {
-		logger.Error("error creating the API server instance", slog.Any("err", err))
+		logger.Error("domainerr creating the API server instance", slog.Any("err", err))
 		return fmt.Errorf("creating the API server instance: %w", err)
 	}
 	apihandler := apirouter.Handler()
 
 	apihandler, err = registerWebUI(apihandler)
 	if err != nil {
-		logger.Error("error registering web UI handler", slog.Any("err", err))
+		logger.Error("domainerr registering web UI handler", slog.Any("err", err))
 		return fmt.Errorf("registering web UI handler: %w", err)
 	}
 
@@ -190,8 +197,8 @@ func run() error {
 	// Waiting for shutdown signal or POSIX signals
 	select {
 	case err := <-serverErrors:
-		// Non-recoverable server error
-		return fmt.Errorf("server error: %w", err)
+		// Non-recoverable server domainerr
+		return fmt.Errorf("server domainerr: %w", err)
 
 	case sig := <-shutdown:
 		logger.Info("signal received, start shutdown", slog.String("signal", sig.String()))
@@ -199,7 +206,7 @@ func run() error {
 		// Asking API server to shut down and load shed.
 		err := apirouter.Close()
 		if err != nil {
-			logger.Warn("graceful shutdown of apirouter error", slog.Any("err", err))
+			logger.Warn("graceful shutdown of apirouter domainerr", slog.Any("err", err))
 		}
 
 		// Give outstanding requests a deadline for completion.
@@ -209,7 +216,7 @@ func run() error {
 		// Asking listener to shut down and load shed.
 		err = apiserver.Shutdown(ctx)
 		if err != nil {
-			logger.Warn("error during graceful shutdown of HTTP server", slog.Any("err", err))
+			logger.Warn("domainerr during graceful shutdown of HTTP server", slog.Any("err", err))
 			err = apiserver.Close()
 		}
 

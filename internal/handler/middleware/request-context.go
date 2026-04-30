@@ -6,12 +6,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/api/reqcontext"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/reqcontext"
 )
 
 // RequestContextLogger returns a Gin middleware that:
-//  1. Generates a unique request ID.
-//  2. Builds a handler.RequestContext and stores it in the request context
+//  1. Generates a unique request ID (UUIDv4).
+//  2. Builds a RequestContext and stores it in the request context
 //     so that downstream (framework-agnostic) handlers can retrieve it.
 //  3. Logs the completed request with latency and status.
 func RequestContextLogger(logger *slog.Logger) gin.HandlerFunc {
@@ -20,15 +20,12 @@ func RequestContextLogger(logger *slog.Logger) gin.HandlerFunc {
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
 		method := c.Request.Method
-		header := c.Request.Header
-		_ = header
-
 		ip := c.ClientIP()
 		userAgent := c.Request.UserAgent()
 
 		requestID, err := uuid.NewV4()
 		if err != nil {
-			logger.Error("cannot generate a random UUIDv4", slog.Any("error", err))
+			logger.Error("cannot generate a random UUIDv4", slog.Any("domainerr", err))
 			requestID = uuid.Nil
 		}
 
@@ -40,7 +37,7 @@ func RequestContextLogger(logger *slog.Logger) gin.HandlerFunc {
 			Logger:   logger.With(slog.String("request-id", requestID.String())),
 		}
 
-		// Store it so that handler.GetRequestContext(r.Context()) works.
+		// Store it so that reqcontext.GetRequestContext works downstream.
 		c.Request = c.Request.WithContext(reqcontext.WithRequestContext(c.Request.Context(), reqCtx))
 		c.Next()
 
@@ -49,7 +46,6 @@ func RequestContextLogger(logger *slog.Logger) gin.HandlerFunc {
 			slog.Int("status", c.Writer.Status()),
 			slog.String("method", method),
 			slog.String("path", path),
-			// slog.Any("header", header),
 			slog.String("query", query),
 			slog.String("ip", ip),
 			slog.Duration("latency", latency),
