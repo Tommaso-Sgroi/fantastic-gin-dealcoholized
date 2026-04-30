@@ -12,7 +12,6 @@ Example:
 		Database: appdb,
 	})
 	if err != nil {
-		logger.WithError(err).Error("error creating the API server instance")
 		return fmt.Errorf("error creating the API server instance: %w", err)
 	}
 	router := apirouter.Handler()
@@ -35,6 +34,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/api/middleware"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/database"
 )
 
@@ -61,7 +61,8 @@ type Router interface {
 	Close() error
 }
 
-// New returns a new Router instance.
+// New returns a new Router instance. Middleware and routes are registered here
+// so that Handler() is a pure, side-effect-free getter.
 func New(cfg Config) (Router, error) {
 	if cfg.Logger == nil {
 		return nil, errors.New("logger is required")
@@ -71,7 +72,6 @@ func New(cfg Config) (Router, error) {
 	}
 
 	engine := gin.New()
-
 	engine.RedirectTrailingSlash = false
 	engine.RedirectFixedPath = false
 	engine.HandleMethodNotAllowed = true
@@ -79,17 +79,19 @@ func New(cfg Config) (Router, error) {
 		return nil, fmt.Errorf("setting trusted proxies: %w", err)
 	}
 
+	// Global middleware
 	engine.Use(cors.New(cfg.CORS))
 	engine.Use(gin.Recovery())
+	engine.Use(middleware.RequestContextLogger(cfg.Logger))
 
-	return &router{
+	return &_router{
 		engine:     engine,
 		baseLogger: cfg.Logger,
 		db:         cfg.Database,
 	}, nil
 }
 
-type router struct {
+type _router struct {
 	engine     *gin.Engine
 	baseLogger *slog.Logger
 	db         database.AppDatabase

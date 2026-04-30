@@ -20,12 +20,8 @@ func RequestContextLogger(logger *slog.Logger) gin.HandlerFunc {
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
 		method := c.Request.Method
-		header := ""
-		for k, h := range c.Request.Header {
-			for _, v := range h {
-				header += k + "=" + v + ";"
-			}
-		}
+		header := c.Request.Header
+		_ = header
 
 		ip := c.ClientIP()
 		userAgent := c.Request.UserAgent()
@@ -49,12 +45,11 @@ func RequestContextLogger(logger *slog.Logger) gin.HandlerFunc {
 		c.Next()
 
 		latency := time.Since(start)
-		logger.Info("request completed",
-			slog.String("request-id", requestID.String()),
+		reqCtx.Logger.Info("request completed",
 			slog.Int("status", c.Writer.Status()),
 			slog.String("method", method),
 			slog.String("path", path),
-			slog.String("header", header),
+			// slog.Any("header", header),
 			slog.String("query", query),
 			slog.String("ip", ip),
 			slog.Duration("latency", latency),

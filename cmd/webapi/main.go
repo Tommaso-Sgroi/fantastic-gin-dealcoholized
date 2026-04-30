@@ -30,7 +30,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -62,7 +61,6 @@ func main() {
 // * waits for any termination event: SIGTERM signal (UNIX), non-recoverable server error, etc.
 // * closes the principal web server
 func run() error {
-	rand.New(rand.NewSource(time.Now().Local().Unix()))
 	// Load Configuration and defaults
 	cfg, err := loadConfiguration()
 	if err != nil {
@@ -128,7 +126,7 @@ func run() error {
 		return fmt.Errorf("creating AppDatabase: %w", err)
 	}
 
-	if db.Ping() != nil {
+	if err := db.Ping(); err != nil {
 		logger.Error("error pinging AppDatabase", slog.Any("err", err))
 		return fmt.Errorf("pinging AppDatabase: %w", err)
 	}

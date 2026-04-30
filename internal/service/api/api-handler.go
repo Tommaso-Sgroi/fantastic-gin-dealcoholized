@@ -6,17 +6,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/api/handler"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/api/middleware"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/service/api/reqcontext"
 )
 
-// Handler builds the HTTP handler for the API. It wires up middleware,
-// creates the business-logic handler, and registers every route.
-func (rt *router) Handler() http.Handler {
+// Handler returns the http.Handler for the API. Routes and middleware are
+// registered once in New() — this is a pure getter.
+func (rt *_router) Handler() http.Handler {
 	h := handler.New(rt.db)
-
-	// add a contex logger to log more info
-	rt.engine.Use(middleware.RequestContextLogger(rt.baseLogger))
 
 	// --- routes --------------------------------------------------------
 	rt.engine.GET("/name/:id", rt.wrap(h.GetNameByID))
@@ -30,7 +26,7 @@ func (rt *router) Handler() http.Handler {
 }
 
 // wrap adapts a framework-agnostic API handler to Gin.
-func (rt *router) wrap(fn handler.WebAPIHandlerFunc) gin.HandlerFunc {
+func (rt *_router) wrap(fn handler.WebAPIHandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		reqCtx := reqcontext.GetRequestContext(c)
 

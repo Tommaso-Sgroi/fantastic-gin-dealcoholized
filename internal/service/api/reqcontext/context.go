@@ -20,13 +20,13 @@ import (
 type RequestContext struct {
 	// Embed the standard context.Context so handlers can use context features
 	// like timeouts and cancellation.
-	Context *gin.Context
+	Context context.Context
 
 	// ReqUUID is a unique ID for this request (typically a UUIDv4).
 	// Use this for tracing and correlation logs.
 	ReqUUID uuid.UUID
 
-	// RemoteIP is the client's IP address (may be the actual client or a proxy,
+	// RemoteIP is the client's IP address (it may be the actual client or a proxy,
 	// depending on trusted proxy configuration).
 	RemoteIP string
 
