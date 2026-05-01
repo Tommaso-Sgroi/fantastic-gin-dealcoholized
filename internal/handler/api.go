@@ -60,7 +60,7 @@ type Config struct {
 
 // Router is the public interface for the HTTP handler layer.
 type Router interface {
-	// Handler returns an http.Handler that serves all registered API routes.
+	// Handler returns an http.Handler that serves all registered API route.
 	Handler() http.Handler
 
 	// Close terminates any resource opened during the router lifecycle.
@@ -68,7 +68,7 @@ type Router interface {
 }
 
 // New returns a new Router instance. Global middleware is registered here;
-// routes are registered lazily in Handler() — call Handler() exactly once.
+// route are registered lazily in Handler() — call Handler() exactly once.
 func New(cfg Config) (Router, error) {
 	if cfg.Logger == nil {
 		return nil, errors.New("logger is required")

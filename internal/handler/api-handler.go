@@ -6,10 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/reqcontext"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/routes"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/route"
 )
 
-// Handler registers all routes and returns the http.Handler for the API.
+// Handler registers all route and returns the http.Handler for the API.
 // Call this method exactly once after New().
 func (rt *_router) Handler() http.Handler {
 	h := routes.New(rt.nameService, rt.healthService)
