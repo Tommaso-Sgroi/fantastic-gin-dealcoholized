@@ -11,5 +11,5 @@ type HealthService interface {
 
 // Pinger is the minimal persistence contract needed for health checks.
 type Pinger interface {
-	Ping(ctx context.Context) error
+	Ping() error
 }

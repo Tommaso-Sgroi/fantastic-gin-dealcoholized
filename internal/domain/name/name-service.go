@@ -14,11 +14,12 @@ const maxNameLength = 255
 // nameService is the concrete implementation of NameService.
 type nameService struct {
 	repo repository.Repository
+	trnx repository.Transactor
 }
 
-// NewNameService returns a NameService backed by the provided database.AppDatabase.
-func NewNameService(repo repository.Repository) ServiceName {
-	return &nameService{repo: repo}
+// NewNameService returns a NameService backed by the provided Repository and Transactor.
+func NewNameService(repo repository.Repository, trnx repository.Transactor) ServiceName {
+	return &nameService{repo: repo, trnx: trnx}
 }
 
 func (s *nameService) GetByID(ctx context.Context, id int64) (Name, error) {
@@ -55,6 +56,44 @@ func (s *nameService) DeleteByID(ctx context.Context, id int64) error {
 		return fmt.Errorf("DeleteByID id=%d: %w", id, err)
 	}
 	return nil
+}
+
+// Replace atomically removes the Name identified by id and inserts a new one
+// with newValue. Both operations run inside a single transaction so the database
+// is never left in a half-updated state.
+func (s *nameService) Replace(ctx context.Context, id int64, newValue string) (Name, error) {
+	if err := validateName(newValue); err != nil {
+		return Name{}, fmt.Errorf("replace id=%d: %w", id, err)
+	}
+
+	var created Name
+	err := s.trnx.RunInTransaction(ctx, func(ctx context.Context, repoTx repository.Repository) error {
+		// Verify the entity exists before deleting — surfaces ErrNotFound cleanly.
+		if _, err := repoTx.GetNameByID(ctx, id); err != nil {
+			return fmt.Errorf("replace id=%d: %w", id, err)
+		}
+
+		if err := repoTx.DeleteNameByID(ctx, id); err != nil {
+			return fmt.Errorf("replace delete id=%d: %w", id, err)
+		}
+
+		newID, err := repoTx.CreateName(ctx, newValue)
+		if err != nil {
+			return fmt.Errorf("replace create: %w", err)
+		}
+
+		// Redundant just for "show-case"
+		if name, err := repoTx.GetNameByID(ctx, newID); err != nil {
+			return fmt.Errorf("replace id=%d: %w", id, err)
+		} else {
+			created = Name{ID: newID, Value: name}
+		}
+		return nil
+	})
+	if err != nil {
+		return Name{}, err
+	}
+	return created, nil
 }
 
 // validateName enforces domain-level invariants on a Name value.

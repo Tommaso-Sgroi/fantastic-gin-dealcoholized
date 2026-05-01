@@ -11,6 +11,6 @@ func NewHealthService(pinger Pinger) HealthService {
 	return &healthService{pinger: pinger}
 }
 
-func (s *healthService) Liveness(ctx context.Context) error {
-	return s.pinger.Ping(ctx)
+func (s *healthService) Liveness(_ context.Context) error {
+	return s.pinger.Ping()
 }

@@ -122,13 +122,13 @@ func run() error {
 		logger.Info("database stopping")
 		_ = dbconn.Close()
 	}()
-	db, err := repository.New(dbconn)
+	db, txtor, err := repository.New(dbconn)
 	if err != nil {
 		logger.Error("error creating AppDatabase", slog.Any("err", err))
 		return fmt.Errorf("creating AppDatabase: %w", err)
 	}
 
-	if err := db.Ping(context.Background()); err != nil {
+	if err := dbconn.Ping(); err != nil {
 		logger.Error("error pinging AppDatabase", slog.Any("err", err))
 		return fmt.Errorf("pinging AppDatabase: %w", err)
 	}
@@ -137,8 +137,8 @@ func run() error {
 	logger.Info("initializing API server")
 
 	// Wire domain services
-	nameService := name.NewNameService(db)
-	healthService := health.NewHealthService(db)
+	nameService := name.NewNameService(db, txtor)
+	healthService := health.NewHealthService(dbconn)
 
 	// Make a channel to listen for an interrupt or terminate signal from the OS.
 	// Use a buffered channel because the signal package requires it.

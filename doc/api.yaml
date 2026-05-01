@@ -158,6 +158,47 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+# ─── /name/{id}/replace ──────────────────────────────────────────────────────
+
+  /name/{id}/replace:
+    parameters:
+      - $ref: "#/components/parameters/nameId"
+
+    post:
+      tags: [Names]
+      operationId: replaceName
+      summary: Replace a name (transactional)
+      description: |
+        Atomically deletes the name identified by `id` and creates a new one
+        with the provided value — both operations run inside a single database
+        transaction. If any step fails the database is left unchanged.
+
+        The response contains the **newly created** resource (with a new `id`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NameInput"
+            example:
+              name: "NewAlice"
+      responses:
+        "201":
+          description: Name replaced — new resource returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Name"
+              example:
+                id: 42
+                name: "NewAlice"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
 # ─────────────────────────────────────────────────────────────────────────────
 components:
 

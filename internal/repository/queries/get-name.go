@@ -1,4 +1,4 @@
-package repository
+package queries
 
 import (
 	"context"
@@ -11,9 +11,9 @@ import (
 
 // GetNameByID returns the name for the given id.
 // Returns errs.ErrNotFound (wrapped with context) when no row matches.
-func (db *appdbimpl) GetNameByID(ctx context.Context, id int64) (string, error) {
+func (r *RepositoryQueryExecutor) GetNameByID(ctx context.Context, id int64) (string, error) {
 	var n string
-	err := db.c.QueryRowContext(ctx, `SELECT name FROM example_table WHERE id=?`, id).Scan(&n)
+	err := r.QueryRowContext(ctx, `SELECT name FROM example_table WHERE id=?`, id).Scan(&n)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", fmt.Errorf("GetNameByID id=%d: %w", id, errs.ErrNotFound)
 	} else if err != nil {

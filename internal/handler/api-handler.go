@@ -18,6 +18,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.engine.POST("/name", rt.wrap(h.PostNewName))
 	rt.engine.PUT("/name/:id", rt.wrap(h.PutNameByID))
 	rt.engine.DELETE("/name/:id", rt.wrap(h.DeleteNameByID))
+	rt.engine.POST("/name/:id/replace", rt.wrap(h.PostReplaceNameByID))
 	rt.engine.GET("/healthz", rt.wrap(h.Liveness))
 
 	return rt.engine

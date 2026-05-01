@@ -1,20 +1,20 @@
 /*
-Package repository implements the domain.NameRepository and domain.Pinger interfaces
+Package repository implements the Repository and Transactor interfaces
 using SQLite as the backing store. All SQL queries are confined here; no SQL escapes
 this package.
 
 Usage:
 
-	db, err := sql.Open("sqlite3", "./app.db")
+	sqlDB, err := sql.Open("sqlite3", "./app.db")
 	if err != nil { ... }
-	defer db.Close()
+	defer sqlDB.Close()
 
-	repo, err := repository.New(db)
+	repo, txtor, err := repository.New(sqlDB)
 	if err != nil { ... }
 
-	// Pass repo to domain services:
-	nameService := domain.NewNameService(repo)
-	healthService := domain.NewHealthService(repo)
+	// Inject repo into services; inject txtor into services that need atomicity:
+	nameService := name.NewNameService(repo, txtor)
+	healthService := health.NewHealthService(dbconn)
 */
 package repository
 
@@ -22,21 +22,57 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository/queries"
 )
 
+// appdbimpl is the top-level Repository + Transactor. It embeds RepositoryQueryExecutor
+// for queries and keeps conn solely for connection-level ops (BeginTx).
+// No query method is defined on appdbimpl — they all live on RepositoryQueryExecutor.
 type appdbimpl struct {
-	c *sql.DB
+	queries.RepositoryQueryExecutor
+	conn *sql.DB
 }
 
-// New returns a new Repository backed by the provided *sql.DB.
-// Returns an error if db is nil.
-func New(db *sql.DB) (Repository, error) {
-	if db == nil {
-		return nil, errors.New("sql.DB is required")
+type trxdbimpl struct {
+	*appdbimpl
+}
+
+// New returns a Repository and a Transactor both backed by the provided *sql.DB.
+//
+// Returns an error if sqlDB is nil.
+func New(sqlDB *sql.DB) (Repository, Transactor, error) {
+	if sqlDB == nil {
+		return nil, nil, errors.New("sql.DB is required")
 	}
-	return &appdbimpl{c: db}, nil
+	impl := appdbimpl{
+		RepositoryQueryExecutor: *queries.NewRepositoryQueryExecutor(sqlDB),
+		conn:                    sqlDB,
+	}
+	trx := trxdbimpl{
+		&impl,
+	}
+	return &impl, &trx, nil
 }
 
-func (db *appdbimpl) Ping(ctx context.Context) error {
-	return db.c.PingContext(ctx)
+func (trx *trxdbimpl) RunInTransaction(ctx context.Context, fn func(context.Context, Repository) error) error {
+
+	tx, err := trx.conn.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	// txRepo swaps the query executor to *sql.Tx so all repo methods run inside
+	// the same transaction. inTx is set to prevent accidental nesting.
+	txRepo := &appdbimpl{
+		RepositoryQueryExecutor: *queries.NewRepositoryQueryExecutor(tx),
+		conn:                    nil, // conn is not needed inside a transaction; all queries go through the txRepo's RepositoryQueryExecutor
+	}
+
+	if err = fn(ctx, txRepo); err != nil {
+		_ = tx.Rollback() // best-effort; original error takes priority
+		return err
+	}
+
+	return tx.Commit()
 }

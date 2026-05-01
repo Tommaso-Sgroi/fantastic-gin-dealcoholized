@@ -1,4 +1,4 @@
-package repository
+package queries
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 
 // DeleteNameByID deletes the row with the given id.
 // Returns errs.ErrNotFound if no row matched.
-func (db *appdbimpl) DeleteNameByID(ctx context.Context, id int64) error {
-	res, err := db.c.ExecContext(ctx, `DELETE FROM example_table WHERE id=?`, id)
+func (r *RepositoryQueryExecutor) DeleteNameByID(ctx context.Context, id int64) error {
+	res, err := r.ExecContext(ctx, `DELETE FROM example_table WHERE id=?`, id)
 	if err != nil {
 		return fmt.Errorf("DeleteNameByID id=%d: %w", id, err)
 	}

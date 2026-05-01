@@ -1,4 +1,4 @@
-package repository
+package queries
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 
 // UpdateNameByID updates the name for the given id.
 // Returns errs.ErrNotFound if no row matched.
-func (db *appdbimpl) UpdateNameByID(ctx context.Context, id int64, n string) error {
-	res, err := db.c.ExecContext(ctx, `UPDATE example_table SET name=? WHERE id=?`, n, id)
+func (r *RepositoryQueryExecutor) UpdateNameByID(ctx context.Context, id int64, n string) error {
+	res, err := r.ExecContext(ctx, `UPDATE example_table SET name=? WHERE id=?`, n, id)
 	if err != nil {
 		return fmt.Errorf("UpdateNameByID id=%d: %w", id, err)
 	}
