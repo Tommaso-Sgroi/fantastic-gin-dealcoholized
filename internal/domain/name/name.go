@@ -7,8 +7,23 @@ sentinel values without importing each other.
 */
 package name
 
+import (
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository/record"
+)
+
 // Name represents a Name entry in the system.
+// json tags are here for HTTP serialisation only — no db tags, no infra concerns.
 type Name struct {
-	ID    int64  `db:"id" json:"id"`
-	Value string `db:"name" json:"name"`
+	ID    int64  `json:"id"`
+	Value string `json:"name"`
+}
+
+// nameFromRow maps a repository.NameRecord to a domain Name.
+// All record-to-entity conversions go through here; adding a field to Name means
+// updating this function — the compiler will catch any missing assignments.
+func nameFromRow(row record.NameRecord) Name {
+	return Name{
+		ID:    row.ID,
+		Value: row.Value,
+	}
 }

@@ -1,6 +1,6 @@
 /*
 Package repository implements the Repository and Transactor interfaces
-using SQLite as the backing store. All SQL queries are confined here; no SQL escapes
+using SQLite as the backing store. All SQL dbquery are confined here; no SQL escapes
 this package.
 
 Usage:
@@ -23,14 +23,14 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository/queries"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository/dbquery"
 )
 
 // appdbimpl is the top-level Repository + Transactor. It embeds RepositoryQueryExecutor
-// for queries and keeps conn solely for connection-level ops (BeginTx).
-// No query method is defined on appdbimpl — they all live on RepositoryQueryExecutor.
+// for dbquery and keeps conn solely for connection-level ops (BeginTx).
+// No dbquery method is defined on appdbimpl — they all live on RepositoryQueryExecutor.
 type appdbimpl struct {
-	queries.RepositoryQueryExecutor
+	dbquery.RepositoryQueryExecutor
 	conn *sql.DB
 }
 
@@ -46,7 +46,7 @@ func New(sqlDB *sql.DB) (Repository, Transactor, error) {
 		return nil, nil, errors.New("sql.DB is required")
 	}
 	impl := appdbimpl{
-		RepositoryQueryExecutor: *queries.NewRepositoryQueryExecutor(sqlDB),
+		RepositoryQueryExecutor: *dbquery.NewRepositoryQueryExecutor(sqlDB),
 		conn:                    sqlDB,
 	}
 	trx := trxdbimpl{
@@ -62,11 +62,11 @@ func (trx *trxdbimpl) RunInTransaction(ctx context.Context, fn func(context.Cont
 		return err
 	}
 
-	// txRepo swaps the query executor to *sql.Tx so all repo methods run inside
+	// txRepo swaps the dbquery executor to *sql.Tx so all repo methods run inside
 	// the same transaction. inTx is set to prevent accidental nesting.
 	txRepo := &appdbimpl{
-		RepositoryQueryExecutor: *queries.NewRepositoryQueryExecutor(tx),
-		conn:                    nil, // conn is not needed inside a transaction; all queries go through the txRepo's RepositoryQueryExecutor
+		RepositoryQueryExecutor: *dbquery.NewRepositoryQueryExecutor(tx),
+		conn:                    nil, // conn is not needed inside a transaction; all dbquery go through the txRepo's RepositoryQueryExecutor
 	}
 
 	if err = fn(ctx, txRepo); err != nil {

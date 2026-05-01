@@ -49,7 +49,7 @@ func RequestContextLogger(logger *slog.Logger) gin.HandlerFunc {
 		latency := time.Since(start)
 		reqCtx.Logger.Info("request completed",
 			slog.Int("status", c.Writer.Status()),
-			slog.String("query", query),
+			slog.String("dbquery", query),
 			slog.Duration("latency", latency),
 		)
 	}

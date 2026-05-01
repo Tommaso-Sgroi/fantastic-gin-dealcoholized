@@ -1,4 +1,4 @@
-package queries
+package dbquery
 
 import (
 	"context"

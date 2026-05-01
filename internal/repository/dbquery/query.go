@@ -1,4 +1,4 @@
-package queries
+package dbquery
 
 import (
 	"context"
@@ -15,8 +15,8 @@ type QueryExecutor interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
-// RepositoryQueryExecutor is the ONLY type that holds db and therefore the only receiver for query methods.
-// It intentionally has no conn field so a developer writing a new query method
+// RepositoryQueryExecutor is the ONLY type that holds db and therefore the only receiver for dbquery methods.
+// It intentionally has no conn field so a developer writing a new dbquery method
 // cannot accidentally bypass a transaction by reaching *sql.DB directly.
 type RepositoryQueryExecutor struct {
 	QueryExecutor // *sql.DB normally, *sql.Tx inside a transaction
