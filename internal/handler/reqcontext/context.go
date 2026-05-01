@@ -12,23 +12,16 @@ import (
 // handlers consume. This is ONLY for per-request data, NOT for application-level
 // dependencies.
 //
-// Middleware (framework-specific Gin code) creates this and stores it so that
-// framework-agnostic handlers can retrieve it without importing Gin.
-//
-// Application-level dependencies (DB, services, etc.) are provided via the
-// Handler struct receiver on handler methods.
+// Middleware (framework-specific Gin code) creates a new context handler wrapping the
+// logger and gin context storing it so that gin handlers can retrieve it .
 type RequestContext struct {
 	// Embed the standard context.Context so handlers can use context features
 	// like timeouts and cancellation.
-	Context context.Context
+	*gin.Context
 
 	// ReqUUID is a unique ID for this request (typically a UUIDv4).
 	// Use this for tracing and correlation logs.
 	ReqUUID uuid.UUID
-
-	// RemoteIP is the client's IP address (it may be the actual client or a proxy,
-	// depending on trusted proxy configuration).
-	RemoteIP string
 
 	// Logger is a per-request logger. Middleware should have already added
 	// contextual fields (like request-id). Handlers should use this instead of
@@ -55,5 +48,5 @@ func GetRequestContext(ctx *gin.Context) *RequestContext {
 	if rc, ok := ctx.Request.Context().Value(reqCtxKey).(*RequestContext); ok {
 		return rc
 	}
-	return &RequestContext{Context: ctx, Logger: slog.Default()}
+	return &RequestContext{Context: ctx, Logger: nil}
 }

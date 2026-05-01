@@ -7,39 +7,41 @@ import (
 	"strconv"
 
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/errs"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/dto"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/reqcontext"
 )
 
-func (h *WebAPIHandler) PutNameByID(w http.ResponseWriter, r *http.Request, pr PathParameters, ctx *reqcontext.RequestContext) {
-	id, err := strconv.ParseInt(pr["id"], 10, 64)
+func (h *WebAPIHandler) PutNameByID(ctx *reqcontext.RequestContext) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		jsonError(w, http.StatusBadRequest, "invalid id")
+		ctx.Logger.Error("PutNameByID invalid id", "err", err)
+		respondWithJSONError(ctx, http.StatusBadRequest, "invalid id")
 		return
 	}
 
-	var body struct {
-		Name string `json:"name"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		jsonError(w, http.StatusBadRequest, "body must be valid JSON with a \"name\" field")
+	var req dto.CreateNameRequest
+	if err := json.NewDecoder(ctx.Request.Body).Decode(&req); err != nil {
+		ctx.Logger.Error("PutNameByID invalid request body", "err", err)
+		respondWithJSONError(ctx, http.StatusBadRequest, "body must be valid JSON with a \"name\" field")
 		return
 	}
 
-	n, err := h.Names.UpdateByID(r.Context(), id, body.Name)
+	n, err := h.Names.UpdateByID(ctx.Request.Context(), id, req.Name)
 	if errors.Is(err, errs.ErrNotFound) {
-		jsonError(w, http.StatusNotFound, "not found")
+		ctx.Logger.Error("PutNameByID name not found", "id", id)
+		respondWithJSONError(ctx, http.StatusNotFound, "not found")
 		return
 	}
 	if errors.Is(err, errs.ErrInvalidInput) {
-		jsonError(w, http.StatusBadRequest, "name must be a non-empty string of at most 255 characters")
+		ctx.Logger.Error("PutNameByID invalid input", "err", err)
+		respondWithJSONError(ctx, http.StatusBadRequest, "name must be a non-empty string of at most 255 characters")
 		return
 	}
 	if err != nil {
 		ctx.Logger.Error("PutNameByID service error", "err", err)
-		jsonError(w, http.StatusInternalServerError, "internal server error")
+		respondWithJSONError(ctx, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"id": n.ID, "name": n.Value})
+	ctx.JSON(http.StatusOK, dto.ToNameResponse(n))
 }

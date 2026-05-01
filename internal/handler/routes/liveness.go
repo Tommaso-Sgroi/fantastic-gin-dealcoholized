@@ -8,11 +8,11 @@ import (
 
 // Liveness checks the application health. Replies 500 if the database is
 // unreachable, 200 otherwise.
-func (h *WebAPIHandler) Liveness(w http.ResponseWriter, r *http.Request, _ PathParameters, ctx *reqcontext.RequestContext) {
-	if err := h.Health.Liveness(r.Context()); err != nil {
+func (h *WebAPIHandler) Liveness(ctx *reqcontext.RequestContext) {
+	if err := h.Health.Liveness(ctx.Request.Context()); err != nil {
 		ctx.Logger.Error("liveness check failed", "err", err)
-		jsonError(w, http.StatusInternalServerError, "database unreachable")
+		respondWithJSONError(ctx, http.StatusInternalServerError, "database unreachable")
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	ctx.Status(http.StatusOK)
 }

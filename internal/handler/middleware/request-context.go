@@ -31,10 +31,15 @@ func RequestContextLogger(logger *slog.Logger) gin.HandlerFunc {
 
 		// Build the framework-agnostic RequestContext.
 		reqCtx := &reqcontext.RequestContext{
-			Context:  c,
-			ReqUUID:  requestID,
-			RemoteIP: ip,
-			Logger:   logger.With(slog.String("request-id", requestID.String())),
+			Context: c,
+			ReqUUID: requestID,
+			Logger: logger.With(
+				slog.String("request-id", requestID.String()),
+				slog.String("path", path),
+				slog.String("method", method),
+				slog.String("ip", ip),
+				slog.String("user_agent", userAgent),
+			),
 		}
 
 		// Store it so that reqcontext.GetRequestContext works downstream.
@@ -44,12 +49,8 @@ func RequestContextLogger(logger *slog.Logger) gin.HandlerFunc {
 		latency := time.Since(start)
 		reqCtx.Logger.Info("request completed",
 			slog.Int("status", c.Writer.Status()),
-			slog.String("method", method),
-			slog.String("path", path),
 			slog.String("query", query),
-			slog.String("ip", ip),
 			slog.Duration("latency", latency),
-			slog.String("user_agent", userAgent),
 		)
 	}
 }

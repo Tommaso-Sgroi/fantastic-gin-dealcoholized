@@ -1,28 +1,17 @@
 package routes
 
 import (
-	"net/http"
-
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/health"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/name"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/reqcontext"
 )
 
-// PathParameters holds URL path parameters extracted by the router.
-// Framework-agnostic: handlers receive these as a plain map.
-type PathParameters map[string]string
-
-// HandlerFunc is the signature for all route handlers. It is completely
-// agnostic of the underlying HTTP framework (Gin, chi, stdlib, …).
+// HandlerFunc is the signature for all route handlers.
 //
-// Parameters:
-//   - w:   http.ResponseWriter for sending the response.
-//   - r:   *http.Request — standard library request; use r.Context() for cancellation.
-//   - ps:  PathParameters extracted from the URL path.
-//   - ctx: RequestContext with per-request metadata (UUID, IP, Logger).
-//
+// Handlers receive a RequestContext that wraps Gin context plus per-request
+// metadata (request UUID and request logger).
 // Application-level dependencies are provided via the WebAPIHandler receiver.
-type HandlerFunc func(w http.ResponseWriter, r *http.Request, ps PathParameters, ctx *reqcontext.RequestContext)
+type HandlerFunc func(*reqcontext.RequestContext)
 
 // WebAPIHandler holds all application-level dependencies shared by route handlers.
 // Per-request data arrives via the RequestContext parameter, not through this struct.

@@ -34,7 +34,11 @@ All error responses are JSON: `{"error": "<message>"}`.
 * `doc/` contains the OpenAPI 3.1 specification (`api.yaml`)
 * `internal/` has all packages for implementing project-specific functionalities
 	* `domain/` contains business entities and use-cases (for example the `name` and `health` domain packages)
-	* `handler/` contains the HTTP transport layer (Gin router, middleware, request context, and route handlers)
+	* `handler/` contains the HTTP transport layer (Gin router, middleware, request context wrapper, DTOs, and route handlers)
+		* `handler/routes` contains route handlers and HTTP-level error mapping
+		* `handler/middleware` contains Gin middleware for request-scoped metadata and logging
+		* `handler/reqcontext` contains the wrapped request context passed to handlers
+		* `handler/dto` contains request/response data-transfer objects used at the HTTP boundary
 	* `repository/` contains the persistence layer (SQLite queries and data access)
 	* `errs/` contains shared application-level sentinel errors used to disambiguate failures across layers
 * `vendor/` is managed by Go, and contains a copy of all dependencies
@@ -48,15 +52,16 @@ All error responses are JSON: `{"error": "<message>"}`.
 
 The backend follows a simple layered approach:
 
-* **HTTP layer (`internal/handler`)** receives requests, decodes/encodes JSON and maps domain errors to HTTP status codes.
+* **HTTP layer (`internal/handler`)** receives requests, adapts Gin handlers to route handlers through a wrapped request context, maps DTOs to/from domain models, and maps domain errors to HTTP status codes.
 * **Domain layer (`internal/domain`)** contains business rules and use-case orchestration, independent from underlying technology stack: Gin and SQLite.
 * **Repository layer (`internal/repository`)** handles storage details and SQL queries.
 
 Typical flow:
 
-`HTTP request -> handler/routes -> domain use-case -> repository -> SQLite`
+`HTTP request -> Gin router/middleware -> handler/routes -> domain use-case -> repository -> SQLite`
 
 Dependencies are one-way, and shared error sentinels live in `internal/errs` so `errors.Is(...)` works consistently through wrapped errors.
+The HTTP contract is kept explicit via `internal/handler/dto`, while domain entities stay in `internal/domain`.
 
 Other project files include:
 * `open-node.sh` starts a temporary container using the `node:20` image for safe web frontend development

@@ -9,6 +9,6 @@ package name
 
 // Name represents a Name entry in the system.
 type Name struct {
-	ID    int64
-	Value string
+	ID    int64  `db:"id" json:"id"`
+	Value string `db:"name" json:"name"`
 }

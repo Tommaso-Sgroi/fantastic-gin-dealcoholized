@@ -9,21 +9,23 @@ import (
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/reqcontext"
 )
 
-func (h *WebAPIHandler) DeleteNameByID(w http.ResponseWriter, r *http.Request, pr PathParameters, ctx *reqcontext.RequestContext) {
-	id, err := strconv.ParseInt(pr["id"], 10, 64)
+func (h *WebAPIHandler) DeleteNameByID(ctx *reqcontext.RequestContext) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		jsonError(w, http.StatusBadRequest, "invalid id")
+		ctx.Logger.Error("DeleteNameByID invalid id", "err", err)
+		respondWithJSONError(ctx, http.StatusBadRequest, "invalid id")
 		return
 	}
 
-	if err := h.Names.DeleteByID(r.Context(), id); errors.Is(err, errs.ErrNotFound) {
-		jsonError(w, http.StatusNotFound, "not found")
+	if err := h.Names.DeleteByID(ctx.Request.Context(), id); errors.Is(err, errs.ErrNotFound) {
+		ctx.Logger.Error("DeleteNameByID name not found", "id", id)
+		respondWithJSONError(ctx, http.StatusNotFound, "not found")
 		return
 	} else if err != nil {
 		ctx.Logger.Error("DeleteNameByID service error", "err", err)
-		jsonError(w, http.StatusInternalServerError, "internal server error")
+		respondWithJSONError(ctx, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent) // 204 — deleted, no-body
+	ctx.Status(http.StatusNoContent) // 204 — deleted, no-body
 }

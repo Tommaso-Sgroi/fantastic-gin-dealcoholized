@@ -7,31 +7,30 @@ import (
 	"net/http"
 
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/errs"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/dto"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/reqcontext"
 )
 
-func (h *WebAPIHandler) PostNewName(w http.ResponseWriter, r *http.Request, _ PathParameters, ctx *reqcontext.RequestContext) {
-	var body struct {
-		Name string `json:"name"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		jsonError(w, http.StatusBadRequest, "body must be valid JSON with a \"name\" field")
+func (h *WebAPIHandler) PostNewName(ctx *reqcontext.RequestContext) {
+	var namereq dto.CreateNameRequest
+
+	if err := json.NewDecoder(ctx.Request.Body).Decode(&namereq); err != nil {
+		ctx.Logger.Error("PostNewName invalid request body", "err", err)
+		respondWithJSONError(ctx, http.StatusBadRequest, "body must be valid JSON with a \"name\" field")
 		return
 	}
 
-	n, err := h.Names.Create(r.Context(), body.Name)
+	name, err := h.Names.Create(ctx.Request.Context(), namereq.Name)
 	if errors.Is(err, errs.ErrInvalidInput) {
-		jsonError(w, http.StatusBadRequest, "name must be a non-empty string of at most 255 characters")
+		ctx.Logger.Error("PostNewName invalid input", "err", err)
+		respondWithJSONError(ctx, http.StatusBadRequest, "name must be a non-empty string of at most 255 characters")
 		return
-	}
-	if err != nil {
+	} else if err != nil {
 		ctx.Logger.Error("PostNewName service error", "err", err)
-		jsonError(w, http.StatusInternalServerError, "internal server error")
+		respondWithJSONError(ctx, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Location", fmt.Sprintf("/name/%d", n.ID))
-	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(map[string]any{"id": n.ID, "name": n.Value})
+	ctx.Header("Location", fmt.Sprintf("/name/%d", name.ID))
+	ctx.JSON(http.StatusCreated, dto.ToNameResponse(name))
 }

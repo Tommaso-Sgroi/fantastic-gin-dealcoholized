@@ -1,14 +1,11 @@
 package routes
 
 import (
-	"encoding/json"
-	"net/http"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/dto"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/reqcontext"
 )
 
-// jsonError writes a consistent JSON error response: {"error": "<msg>"}
-func jsonError(w http.ResponseWriter, status int, msg string) {
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
+// respondWithJSONError writes a consistent JSON error response.
+func respondWithJSONError(ctx *reqcontext.RequestContext, status int, msg string) {
+	ctx.JSON(status, dto.ErrorResponse{Error: msg})
 }

@@ -33,10 +33,6 @@ func (rt *_router) wrap(fn routes.HandlerFunc) gin.HandlerFunc {
 				slog.String("request-id", reqCtx.ReqUUID.String()),
 			)
 		}
-		params := make(routes.PathParameters, len(c.Params))
-		for _, param := range c.Params {
-			params[param.Key] = param.Value
-		}
-		fn(c.Writer, c.Request, params, reqCtx)
+		fn(reqCtx)
 	}
 }
