@@ -39,8 +39,8 @@ import (
 	"github.com/ardanlabs/conf/v3"
 	"github.com/gin-contrib/cors"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/fountain"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/health"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/name"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository"
 )
@@ -122,7 +122,7 @@ func run() error {
 		logger.Info("database stopping")
 		_ = dbconn.Close()
 	}()
-	db, txtor, err := repository.New(dbconn)
+	db, tx, err := repository.New(dbconn)
 	if err != nil {
 		logger.Error("error creating AppDatabase", slog.Any("err", err))
 		return fmt.Errorf("creating AppDatabase: %w", err)
@@ -137,7 +137,7 @@ func run() error {
 	logger.Info("initializing API server")
 
 	// Wire domain services
-	nameService := name.NewNameService(db, txtor)
+	fountainService := fountain.NewFountainService(db, tx)
 	healthService := health.NewHealthService(dbconn)
 
 	// Make a channel to listen for an interrupt or terminate signal from the OS.
@@ -161,9 +161,9 @@ func run() error {
 				AllowCredentials: cfg.CORS.AllowCredentials,
 				MaxAge:           time.Duration(cfg.CORS.MaxAge) * time.Second,
 			},
-			NameService:    nameService,
-			HealthService:  healthService,
-			TrustedProxies: cfg.Web.TrustedProxies,
+			FountainService: fountainService,
+			HealthService:   healthService,
+			TrustedProxies:  cfg.Web.TrustedProxies,
 		},
 	)
 	if err != nil {

@@ -10,9 +10,9 @@ a standard http.Server.
 Example:
 
 	apirouter, err := handler.New(handler.Config{
-		Logger:        logger,
-		NameService:   nameService,
-		HealthService: healthService,
+		Logger:          logger,
+		FountainService: fountainService,
+		HealthService:   healthService,
 	})
 	if err != nil {
 		return fmt.Errorf("error creating the API server instance: %w", err)
@@ -36,8 +36,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/fountain"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/health"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/name"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/middleware"
 )
 
@@ -51,8 +51,8 @@ type Config struct {
 	// TrustedProxies is the list of trusted proxy IPs for Gin.
 	TrustedProxies []string
 
-	// NameService is the domain service for Name operations.
-	NameService name.ServiceName
+	// FountainService is the domain service for Fountain CRUD operations.
+	FountainService fountain.ServiceFountain
 
 	// HealthService is the domain service for health checks.
 	HealthService health.HealthService
@@ -60,7 +60,7 @@ type Config struct {
 
 // Router is the public interface for the HTTP handler layer.
 type Router interface {
-	// Handler returns an http.Handler that serves all registered API route.
+	// Handler returns an http.Handler that serves all registered API routes.
 	Handler() http.Handler
 
 	// Close terminates any resource opened during the router lifecycle.
@@ -68,13 +68,13 @@ type Router interface {
 }
 
 // New returns a new Router instance. Global middleware is registered here;
-// route are registered lazily in Handler() — call Handler() exactly once.
+// routes are registered lazily in Handler() — call Handler() exactly once.
 func New(cfg Config) (Router, error) {
 	if cfg.Logger == nil {
 		return nil, errors.New("logger is required")
 	}
-	if cfg.NameService == nil {
-		return nil, errors.New("name service is required")
+	if cfg.FountainService == nil {
+		return nil, errors.New("fountain service is required")
 	}
 	if cfg.HealthService == nil {
 		return nil, errors.New("health service is required")
@@ -94,16 +94,16 @@ func New(cfg Config) (Router, error) {
 	engine.Use(middleware.RequestContextLogger(cfg.Logger))
 
 	return &_router{
-		engine:        engine,
-		baseLogger:    cfg.Logger,
-		nameService:   cfg.NameService,
-		healthService: cfg.HealthService,
+		engine:          engine,
+		baseLogger:      cfg.Logger,
+		fountainService: cfg.FountainService,
+		healthService:   cfg.HealthService,
 	}, nil
 }
 
 type _router struct {
-	engine        *gin.Engine
-	baseLogger    *slog.Logger
-	nameService   name.ServiceName
-	healthService health.HealthService
+	engine          *gin.Engine
+	baseLogger      *slog.Logger
+	fountainService fountain.ServiceFountain
+	healthService   health.HealthService
 }
