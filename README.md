@@ -7,21 +7,20 @@ This project is a fork of [Fantastic Coffee (decaffeinated)](https://github.com/
 by [Enrico Bassetti](https://github.com/Enrico204) - originally created for the
 [Web and Software Architecture](http://gamificationlab.uniroma1.it/en/wasa/) course at Sapienza University of Rome.
 
-> ⚠️ **This is a _for-fun_ project and is not suitable for a real production environment.**
 
 ## What it does
 
 The project itself shows an "actual" example implementation of the backend.  
 It exposes a small REST API (documented in [`doc/api.yaml`](doc/api.yaml)) to create, read, update and delete "names" stored in a SQLite database:
 
-| Method   | Path                | Description                     |
-|----------|---------------------|---------------------------------|
-| `GET`    | `/healthz`          | Liveness probe                  |
-| `POST`   | `/name`             | Create a name                   |
-| `GET`    | `/name/:id`         | Get a name by ID                |
-| `PUT`    | `/name/:id`         | Update a name by ID             |
-| `DELETE` | `/name/:id`         | Delete a name by ID             |
-| `POST`   | `/name/:id/replace` | Atomically replace a name by ID |
+| Method   | Path                 | Description                     |
+|----------|----------------------|---------------------------------|
+| `GET`    | `/healthz`           | Liveness probe                  |
+| `POST`   | `/names`             | Create a name                   |
+| `GET`    | `/names/:id`         | Get a name by ID                |
+| `PUT`    | `/names/:id`         | Update a name by ID             |
+| `DELETE` | `/names/:id`         | Delete a name by ID             |
+| `POST`   | `/names/:id/replace` | Atomically replace a name by ID |
 
 All error responses are JSON: `{"error": "<message>"}`.
 

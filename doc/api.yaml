@@ -25,7 +25,7 @@ tags:
   - name: General
     description: Utility and diagnostic endpoints
   - name: Names
-    description: CRUD operations on the `/name` resource
+    description: CRUD operations on the `/names` resource
 
 # ─────────────────────────────────────────────────────────────────────────────
 paths:
@@ -44,9 +44,9 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-# ─── /name ───────────────────────────────────────────────────────────────────
+# ─── /names ───────────────────────────────────────────────────────────────────
 
-  /name:
+  /names:
     post:
       tags: [Names]
       operationId: createName
@@ -70,7 +70,7 @@ paths:
               description: URL of the newly created resource
               schema:
                 type: string
-                example: "/name/11"
+                example: "/names/11"
           content:
             application/json:
               schema:
@@ -83,9 +83,9 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-# ─── /name/{id} ──────────────────────────────────────────────────────────────
+# ─── /names/{id} ──────────────────────────────────────────────────────────────
 
-  /name/{id}:
+  /names/{id}:
     parameters:
       - $ref: "#/components/parameters/nameId"
 
@@ -158,9 +158,9 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-# ─── /name/{id}/replace ──────────────────────────────────────────────────────
+# ─── /names/{id}/replace ──────────────────────────────────────────────────────
 
-  /name/{id}/replace:
+  /names/{id}/replace:
     parameters:
       - $ref: "#/components/parameters/nameId"
 

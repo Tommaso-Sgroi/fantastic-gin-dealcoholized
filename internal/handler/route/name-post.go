@@ -31,6 +31,6 @@ func (h *WebAPIHandler) PostNewName(ctx *reqcontext.RequestContext) {
 		return
 	}
 
-	ctx.Header("Location", fmt.Sprintf("/name/%d", name.ID))
+	ctx.Header("Location", fmt.Sprintf("/names/%d", name.ID))
 	ctx.JSON(http.StatusCreated, dto.ToNameResponse(name))
 }

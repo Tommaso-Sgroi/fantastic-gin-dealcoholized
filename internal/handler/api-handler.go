@@ -14,11 +14,11 @@ import (
 func (rt *_router) Handler() http.Handler {
 	h := routes.New(rt.nameService, rt.healthService)
 
-	rt.engine.GET("/name/:id", rt.wrap(h.GetNameByID))
-	rt.engine.POST("/name", rt.wrap(h.PostNewName))
-	rt.engine.PUT("/name/:id", rt.wrap(h.PutNameByID))
-	rt.engine.DELETE("/name/:id", rt.wrap(h.DeleteNameByID))
-	rt.engine.POST("/name/:id/replace", rt.wrap(h.PostReplaceNameByID))
+	rt.engine.GET("/names/:id", rt.wrap(h.GetNameByID))
+	rt.engine.POST("/names", rt.wrap(h.PostNewName))
+	rt.engine.PUT("/names/:id", rt.wrap(h.PutNameByID))
+	rt.engine.DELETE("/names/:id", rt.wrap(h.DeleteNameByID))
+	rt.engine.POST("/names/:id/replace", rt.wrap(h.PostReplaceNameByID))
 	rt.engine.GET("/healthz", rt.wrap(h.Liveness))
 
 	return rt.engine
