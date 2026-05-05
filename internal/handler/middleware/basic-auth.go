@@ -4,4 +4,6 @@ import "github.com/gin-gonic/gin"
 
 // BasicAuth is a placeholder for future basic-auth middleware.
 // TODO: implement or remove.
-func BasicAuth(c *gin.Context) {}
+func BasicAuth(c *gin.Context) gin.HandlerFunc {
+	return gin.BasicAuth(gin.Accounts{})
+}

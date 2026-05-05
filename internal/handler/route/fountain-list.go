@@ -1,10 +1,12 @@
 package routes
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/fountain"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/errs"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/dto"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/reqcontext"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/locationutils"
 )
@@ -40,9 +42,9 @@ func (h *WebAPIHandler) ListFountains(ctx *reqcontext.RequestContext) {
 
 		if q.Has("range") {
 			r, err := strconv.ParseFloat(q.Get("range"), 64)
-			if err != nil || r < 1 || r > 200 {
+			if err != nil {
 				ctx.Logger.Error("ListFountains invalid range", "err", err)
-				respondWithJSONError(ctx, http.StatusBadRequest, "range must be a number between 1 and 200")
+				respondWithJSONError(ctx, http.StatusBadRequest, "range must be a number")
 				return
 			}
 			rangeKm = r
@@ -54,16 +56,16 @@ func (h *WebAPIHandler) ListFountains(ctx *reqcontext.RequestContext) {
 	}
 
 	fountains, err := h.Fountains.List(ctx.Request.Context(), lat, lng, rangeKm)
+	if errors.Is(err, errs.ErrInvalidInput) {
+		ctx.Logger.Error("ListFountains invalid input", "err", err)
+		respondWithJSONError(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
 	if err != nil {
 		ctx.Logger.Error("ListFountains service error", "err", err)
 		respondWithJSONError(ctx, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
-	// Always return an array (never null).
-	if fountains == nil {
-		fountains = make([]fountain.Fountain, 0)
-	}
-
-	ctx.JSON(http.StatusOK, fountains)
+	ctx.JSON(http.StatusOK, dto.NewFountainListResponse(fountains))
 }

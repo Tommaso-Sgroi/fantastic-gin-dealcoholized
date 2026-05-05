@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/errs"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/locationutils"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository/record"
@@ -26,6 +27,10 @@ func (s *fountainService) List(ctx context.Context, lat *float64, lng *float64, 
 	var err error
 
 	if lat != nil && lng != nil {
+		if rangeKm < 1 || rangeKm > 200 {
+			return nil, fmt.Errorf("rangeKm %f out of bounds [1, 200]: %w", rangeKm, errs.ErrInvalidInput)
+		}
+
 		// Two-step geo filter:
 		// 1. Retrieve all fountains inside a bounding box (fast, SQL-side).
 		// 2. Post-filter to a precise circle using the haversine formula (Go-side).

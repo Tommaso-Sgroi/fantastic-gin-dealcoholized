@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/fountain"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/errs"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/dto"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/reqcontext"
 )
 
@@ -20,14 +20,14 @@ func (h *WebAPIHandler) UpdateFountain(ctx *reqcontext.RequestContext) {
 		return
 	}
 
-	var f fountain.Fountain
-	if err = json.NewDecoder(ctx.Request.Body).Decode(&f); err != nil {
+	var req dto.FountainRequest
+	if err = json.NewDecoder(ctx.Request.Body).Decode(&req); err != nil {
 		ctx.Logger.Error("UpdateFountain invalid request body", "err", err)
 		respondWithJSONError(ctx, http.StatusBadRequest, "body must be valid JSON")
 		return
 	}
 
-	updated, err := h.Fountains.Update(ctx.Request.Context(), id, f)
+	updated, err := h.Fountains.Update(ctx.Request.Context(), id, req.ToDomain())
 	if errors.Is(err, errs.ErrNotFound) {
 		ctx.Logger.Error("UpdateFountain not found", "id", id)
 		respondWithJSONError(ctx, http.StatusNotFound, "fountain not found")
@@ -44,5 +44,5 @@ func (h *WebAPIHandler) UpdateFountain(ctx *reqcontext.RequestContext) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, updated)
+	ctx.JSON(http.StatusOK, dto.NewFountainResponse(updated))
 }

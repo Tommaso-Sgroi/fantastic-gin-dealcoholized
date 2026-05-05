@@ -40,7 +40,7 @@ func (f Fountain) Validate() error {
 	return nil
 }
 
-// fountainFromRow maps a repository FountainRecord to a domain Fountain.
+// fountainFromRow maps a record.FountainRecord (DB-boundary DTO) to a domain Fountain.
 // All record-to-entity conversions go through here; adding a field to Fountain means
 // updating this function — the compiler will catch any missing assignments.
 func fountainFromRow(row record.FountainRecord) Fountain {

@@ -5,21 +5,21 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/fountain"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/errs"
+	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/dto"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/reqcontext"
 )
 
 // CreateFountain handles POST /fountains/
 func (h *WebAPIHandler) CreateFountain(ctx *reqcontext.RequestContext) {
-	var f fountain.Fountain
-	if err := json.NewDecoder(ctx.Request.Body).Decode(&f); err != nil {
+	var req dto.FountainRequest
+	if err := json.NewDecoder(ctx.Request.Body).Decode(&req); err != nil {
 		ctx.Logger.Error("CreateFountain invalid request body", "err", err)
 		respondWithJSONError(ctx, http.StatusBadRequest, "body must be valid JSON")
 		return
 	}
 
-	created, err := h.Fountains.Create(ctx.Request.Context(), f)
+	created, err := h.Fountains.Create(ctx.Request.Context(), req.ToDomain())
 	if errors.Is(err, errs.ErrInvalidInput) {
 		ctx.Logger.Error("CreateFountain invalid input", "err", err)
 		respondWithJSONError(ctx, http.StatusBadRequest, err.Error())
@@ -31,5 +31,5 @@ func (h *WebAPIHandler) CreateFountain(ctx *reqcontext.RequestContext) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, created)
+	ctx.JSON(http.StatusCreated, dto.NewFountainResponse(created))
 }
