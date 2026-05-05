@@ -12,13 +12,12 @@ import (
 // Handler registers all route and returns the http.Handler for the API.
 // Call this method exactly once after New().
 func (rt *_router) Handler() http.Handler {
-	h := routes.New(rt.nameService, rt.healthService)
+	h := routes.New(rt.fountainService, rt.healthService)
 
-	rt.engine.GET("/names/:id", rt.wrap(h.GetNameByID))
-	rt.engine.POST("/names", rt.wrap(h.PostNewName))
-	rt.engine.PUT("/names/:id", rt.wrap(h.PutNameByID))
-	rt.engine.DELETE("/names/:id", rt.wrap(h.DeleteNameByID))
-	rt.engine.POST("/names/:id/replace", rt.wrap(h.PostReplaceNameByID))
+	rt.engine.GET("/fountains/", rt.wrap(h.ListFountains))
+	rt.engine.POST("/fountains/", rt.wrap(h.CreateFountain))
+	rt.engine.PUT("/fountains/:id", rt.wrap(h.UpdateFountain))
+	rt.engine.DELETE("/fountains/:id", rt.wrap(h.DeleteFountain))
 	rt.engine.GET("/healthz", rt.wrap(h.Liveness))
 
 	return rt.engine
