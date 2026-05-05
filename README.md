@@ -1,7 +1,7 @@
 # Fantastic Gin Dealcoholized
 
 > A clean, Go REST API template built on [Gin](https://github.com/gin-gonic/gin),
-> following a **layered architecture** and SOLID principles.
+> following a **layered architecture** and SOLID principles.  
 > Note: this is not a production-ready implementation, but a learning tool and starting point for your own projects.
 
 This project is a reimplementation of [Fantastic Coffee (decaffeinated)](https://github.com/sapienzaapps/fantastic-coffee-decaffeinated)
@@ -18,16 +18,15 @@ University of Rome.
 ## What it does
 
 The project exposes a small REST API (documented in [`doc/api.yaml`](doc/api.yaml)) to create,
-read, update and delete **names** stored in a SQLite database:
+read, update and delete **fountains** stored in a SQLite database:
 
-| Method   | Path                  | Description                      |
-|----------|-----------------------|----------------------------------|
-| `GET`    | `/healthz`            | Liveness probe                   |
-| `POST`   | `/names`              | Create a name                    |
-| `GET`    | `/names/:id`          | Get a name by ID                 |
-| `PUT`    | `/names/:id`          | Update a name by ID              |
-| `DELETE` | `/names/:id`          | Delete a name by ID              |
-| `POST`   | `/names/:id/replace`  | Atomically replace a name by ID  |
+| Method   | Path               | Description                                                              |
+|----------|--------------------|--------------------------------------------------------------------------|
+| `GET`    | `/healthz`         | Liveness probe                                                           |
+| `GET`    | `/fountains/`      | List all fountains (optional query params: `latitude`, `longitude`, `range`) |
+| `POST`   | `/fountains/`      | Create a fountain                                                        |
+| `PUT`    | `/fountains/:id`   | Update a fountain by ID                                                  |
+| `DELETE` | `/fountains/:id`   | Delete a fountain by ID                                                  |
 
 All error responses are JSON: `{"error": "<message>"}`.
 
@@ -52,7 +51,7 @@ All error responses are JSON: `{"error": "<message>"}`.
 ├── internal/
 │   ├── domain/
 │   │   ├── health/           # Health-check domain (service-interface.go, service.go)
-│   │   └── name/             # Name entity domain (name.go, service-interface.go, service.go)
+│   │   └── fountain/         # Fountain entity domain (fountain.go, service-interface.go, service.go)
 │   ├── errs/
 │   │   └── errors.go         # Leaf package — shared sentinel errors, no internal imports
 │   ├── handler/
@@ -114,9 +113,9 @@ wrapped errors at every layer.
 | `internal/repository/interface.go` | `Repository` and `Transactor` interface declarations — defined here, consumed by the domain layer |
 | `internal/repository/record/records.go` | Plain data-bag structs produced by SQL queries. `db` struct tags describe column names for row scanning. No domain logic lives here |
 | `internal/repository/dbquery/query.go` | Defines `QueryExecutor` (common interface for `*sql.DB` and `*sql.Tx`) and `RepositoryQueryExecutor` — the **only** type that holds and executes SQL, preventing any query method from accidentally bypassing a transaction |
-| `internal/domain/name/service-interface.go` | Declares `ServiceName` — the public use-case interface consumed by the handler layer. Adding a new use-case starts here |
-| `internal/domain/name/service.go` | Concrete `nameService`: validation (`maxNameLength = 255`), use-case orchestration |
-| `internal/domain/name/name.go` | `Name` domain entity and the private `nameFromRow` mapper from `record.NameRecord` |
+| `internal/domain/fountain/service-interface.go` | Declares `ServiceFountain` — the public use-case interface consumed by the handler layer. Adding a new use-case starts here |
+| `internal/domain/fountain/service.go` | Concrete `fountainService`: validation, use-case orchestration |
+| `internal/domain/fountain/fountain.go` | `Fountain` domain entity, `Validate()`, and the private `fountainFromRow` mapper from `record.FountainRecord` |
 | `internal/handler/api.go` | Defines `Router` interface, `Config`, and `New()`. Configures the Gin engine, registers global middleware (CORS, recovery, request-context logger), validates required dependencies at startup |
 | `internal/handler/api-handler.go` | Registers all routes on the Gin engine via `Handler()` and provides `wrap()` — the adapter that converts a framework-agnostic `routes.HandlerFunc` into a `gin.HandlerFunc` |
 | `internal/handler/route/handler.go` | Defines `HandlerFunc` (the handler signature) and `WebAPIHandler` (the struct carrying shared domain service dependencies across all route handlers) |
@@ -255,5 +254,5 @@ yarn run build-prod
 MIT — see [LICENSE](LICENSE).
 
 Originally authored by [Enrico Bassetti](https://github.com/Enrico204).
-Forked and extended by [Tommaso Sgroi](https://github.com/tommaso-sgroi).
+Reimplemented and extended by [Tommaso Sgroi](https://github.com/tommaso-sgroi).
 
