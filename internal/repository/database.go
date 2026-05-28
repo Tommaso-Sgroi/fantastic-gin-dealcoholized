@@ -3,7 +3,10 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io/fs"
 
+	"github.com/pressly/goose/v3"
 	"gorm.io/gorm"
 )
 
@@ -43,4 +46,20 @@ func (db *Database) RunInTransaction(ctx context.Context, fn func(context.Contex
 	return db.gormdb.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		return fn(ctx, NewRepository(tx))
 	})
+}
+
+func (db *Database) MigrateUp(migrationDir fs.FS) error {
+	dbconn, err := db.gormdb.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	goose.SetBaseFS(migrationDir)
+	if err := goose.SetDialect(db.gormdb.Dialector.Name()); err != nil {
+		return err
+	}
+	if err := goose.Up(dbconn, "."); err != nil {
+		return err
+	}
+	return nil
 }
