@@ -154,8 +154,7 @@ func run() error {
 	}
 
 	// 3. Migrate the DB with goose
-	err = db.MigrateUp(os.DirFS("db" + string(os.PathSeparator) + "migrations"))
-	if err != nil {
+	if err := db.MigrateUp(os.DirFS("db" + string(os.PathSeparator) + "migrations")); err != nil {
 		logger.Error("error migrating database", slog.Any("err", err))
 		return fmt.Errorf("migrating database: %w", err)
 	}
