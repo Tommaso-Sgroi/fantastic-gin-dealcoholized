@@ -2,7 +2,7 @@ package routes
 
 import (
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/health"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/name"
+	nameservice "github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/name"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler/reqcontext"
 )
 
@@ -17,14 +17,14 @@ type HandlerFunc func(*reqcontext.RequestContext)
 // Per-request data arrives via the RequestContext parameter, not through this struct.
 type WebAPIHandler struct {
 	// Names is the domain service for Name CRUD operations.
-	Names name.ServiceName
+	Names nameservice.ServiceName
 
 	// Health is the domain service for liveness / readiness checks.
 	Health health.HealthService
 }
 
 // New creates a WebAPIHandler with the given domain services.
-func New(names name.ServiceName, health health.HealthService) *WebAPIHandler {
+func New(names nameservice.ServiceName, health health.HealthService) *WebAPIHandler {
 	return &WebAPIHandler{
 		Names:  names,
 		Health: health,

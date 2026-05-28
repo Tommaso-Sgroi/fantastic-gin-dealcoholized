@@ -14,8 +14,7 @@ type Repository interface {
 	DeleteNameByID(ctx context.Context, id int64) error
 }
 
-// Transactor exposes the ability to run multiple Repository operations atomically.
-// Use RunInTransaction instead of manual Commit/Rollback to prevent transaction leaks.
+// Transactor provides transaction support.
 type Transactor interface {
 	RunInTransaction(ctx context.Context, fn func(context.Context, Repository) error) error
 }

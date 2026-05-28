@@ -1,6 +1,6 @@
 package dto
 
-import "github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/name"
+import nameservice "github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/name"
 
 type CreateNameRequest struct {
 	Name string `json:"name"`
@@ -12,7 +12,7 @@ type NameResponse struct {
 }
 
 // ToNameResponse maps a domain Name into an API response DTO.
-func ToNameResponse(n name.Name) NameResponse {
+func ToNameResponse(n nameservice.Name) NameResponse {
 	return NameResponse{
 		ID:   n.ID,
 		Name: n.Value,

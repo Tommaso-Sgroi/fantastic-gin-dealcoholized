@@ -1,78 +1,46 @@
-/*
-Package repository implements the Repository and Transactor interfaces
-using SQLite as the backing store. All SQL dbquery are confined here; no SQL escapes
-this package.
-
-Usage:
-
-	sqlDB, err := sql.Open("sqlite3", "./app.db")
-	if err != nil { ... }
-	defer sqlDB.Close()
-
-	repo, txtor, err := repository.New(sqlDB)
-	if err != nil { ... }
-
-	// Inject repo into services; inject txtor into services that need atomicity:
-	nameService := name.NewNameService(repo, txtor)
-	healthService := health.NewHealthService(dbconn)
-*/
 package repository
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository/dbquery"
+	"gorm.io/gorm"
 )
 
-// appdbimpl is the top-level Repository + Transactor. It embeds RepositoryQueryExecutor
-// for dbquery and keeps conn solely for connection-level ops (BeginTx).
-// No dbquery method is defined on appdbimpl — they all live on RepositoryQueryExecutor.
-type appdbimpl struct {
-	dbquery.RepositoryQueryExecutor
-	conn *sql.DB
+type repo struct {
+	gormdb *gorm.DB
 }
 
-type trxdbimpl struct {
-	*appdbimpl
+func newRepository(gormdb *gorm.DB) repo {
+	return repo{gormdb}
 }
 
-// New returns a Repository and a Transactor both backed by the provided *sql.DB.
-//
-// Returns an error if sqlDB is nil.
-func New(sqlDB *sql.DB) (Repository, Transactor, error) {
-	if sqlDB == nil {
-		return nil, nil, errors.New("sql.DB is required")
-	}
-	impl := appdbimpl{
-		RepositoryQueryExecutor: *dbquery.NewRepositoryQueryExecutor(sqlDB),
-		conn:                    sqlDB,
-	}
-	trx := trxdbimpl{
-		&impl,
-	}
-	return &impl, &trx, nil
+func NewRepository(gormdb *gorm.DB) Repository {
+	return new(newRepository(gormdb))
 }
 
-func (trx *trxdbimpl) RunInTransaction(ctx context.Context, fn func(context.Context, Repository) error) error {
+// Database wraps the Repository adding transactions.
+type Database struct {
+	repo
+}
 
-	tx, err := trx.conn.BeginTx(ctx, nil)
-	if err != nil {
-		return err
+// New creates a new Database backed by the provided GORM instance.
+func NewDatabase(gormdb *gorm.DB) (Database, error) {
+	if gormdb == nil {
+		return Database{}, errors.New("can't init database gorm.DB is required")
 	}
+	return Database{newRepository(gormdb)}, nil
+}
 
-	// txRepo swaps the dbquery executor to *sql.Tx so all repo methods run inside
-	// the same transaction. inTx is set to prevent accidental nesting.
-	txRepo := &appdbimpl{
-		RepositoryQueryExecutor: *dbquery.NewRepositoryQueryExecutor(tx),
-		conn:                    nil, // conn is not needed inside a transaction; all dbquery go through the txRepo's RepositoryQueryExecutor
-	}
+// Repository returns a Repository.
+func (db *Database) Repository() Repository {
+	return db
+}
 
-	if err = fn(ctx, txRepo); err != nil {
-		_ = tx.Rollback() // best-effort; original error takes priority
-		return err
-	}
-
-	return tx.Commit()
+// RunInTransaction executes fn within a single database transaction.
+// If fn returns an error, the transaction is rolled back; otherwise committed.
+func (db *Database) RunInTransaction(ctx context.Context, fn func(context.Context, Repository) error) error {
+	return db.gormdb.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return fn(ctx, NewRepository(tx))
+	})
 }

@@ -40,9 +40,11 @@ import (
 	"github.com/gin-contrib/cors"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/health"
-	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/name"
+	nameservice "github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/domain/name"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/handler"
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 // main is the program entry point. The only purpose of this function is to call run() and set the exit code if there is
@@ -113,16 +115,34 @@ func run() error {
 
 	// Start Database
 	logger.Info("initializing database support")
-	dbconn, err := sql.Open("sqlite3", cfg.DB.Filename)
+
+	// 1. Establish GORM connection pool
+	gormDB, err := gorm.Open(
+		sqlite.Open(cfg.DB.Filename),
+		&gorm.Config{
+			SkipDefaultTransaction: true,
+		},
+	)
 	if err != nil {
-		logger.Error("error opening SQLite DB", slog.Any("err", err))
-		return fmt.Errorf("opening SQLite: %w", err)
+		logger.Error("Failed to connect to database: %v", slog.Any("err", err))
+		return fmt.Errorf("connecting to database: %w", err)
 	}
-	defer func() {
-		logger.Info("database stopping")
-		_ = dbconn.Close()
-	}()
-	db, txtor, err := repository.New(dbconn)
+
+	dbconn, err := gormDB.DB()
+	if err != nil {
+		logger.Error("error getting database connection", slog.Any("err", err))
+		return fmt.Errorf("getting database connection: %w", err)
+	}
+
+	defer func(dbconn *sql.DB) {
+		err := dbconn.Close()
+		if err != nil {
+			logger.Error("error closing database connection", slog.Any("err", err))
+		}
+	}(dbconn)
+
+	// 2. Initialize concrete repository Database
+	db, err := repository.NewDatabase(gormDB)
 	if err != nil {
 		logger.Error("error creating AppDatabase", slog.Any("err", err))
 		return fmt.Errorf("creating AppDatabase: %w", err)
@@ -133,11 +153,18 @@ func run() error {
 		return fmt.Errorf("pinging AppDatabase: %w", err)
 	}
 
+	// 3. Migrate the DB with goose
+	err = Migrate(dbconn, gormDB.Dialector.Name())
+	if err != nil {
+		logger.Error("error migrating database", slog.Any("err", err))
+		return fmt.Errorf("migrating database: %w", err)
+	}
+
 	// Start (main) API server
 	logger.Info("initializing API server")
 
 	// Wire domain services
-	nameService := name.NewNameService(db, txtor)
+	nameService := nameservice.New(db)
 	healthService := health.NewHealthService(dbconn)
 
 	// Make a channel to listen for an interrupt or terminate signal from the OS.

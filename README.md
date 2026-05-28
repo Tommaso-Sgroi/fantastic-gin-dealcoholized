@@ -42,8 +42,8 @@ All error responses are JSON: `{"error": "<message>"}`.
 │   └── webapi/               # Main web API server
 │       ├── main.go           # Entry point: wires all layers, starts server, handles shutdown
 │       └── load-configuration.go
-├── db/
-│   ├── fantastic-gin.db      # SQLite database file (path set by demo/config.yml)
+├── gormdb/
+│   ├── fantastic-gin.gormdb      # SQLite database file (path set by demo/config.yml)
 │   └── migrations/           # Reserved for future SQL migration scripts (currently empty)
 ├── demo/
 │   └── config.yml            # Ready-to-use development configuration
@@ -66,9 +66,8 @@ All error responses are JSON: `{"error": "<message>"}`.
 │       ├── database.go       # appdbimpl (Repository) + trxdbimpl (Transactor)
 │       ├── interface.go      # Repository & Transactor interface declarations
 │       ├── dbquery/          # Raw SQL — QueryExecutor + RepositoryQueryExecutor
-│       └── record/           # Plain struct projections of SQL rows (db struct tags)
-├── vendor/                   # Vendored dependencies (managed by go mod vendor)
-└── webui/                    # Vue.js frontend (embedded at build time with -tags webui)
+│       └── record/           # Plain struct projections of SQL rows (gormdb struct tags)
+└── vendor/                   # Vendored dependencies (managed by go mod vendor)
 ```
 
 ### Architecture
@@ -112,7 +111,7 @@ wrapped errors at every layer.
 | `internal/errs/errors.go` | Leaf package of sentinel errors (`ErrNotFound`, `ErrInvalidInput`, `ErrConflict`, `ErrUnauthorized`, `ErrForbidden`, `ErrUnavailable`, `ErrTimeout`, `ErrInternal`). No internal imports |
 | `internal/repository/database.go` | `appdbimpl` implements `Repository`; `trxdbimpl` wraps it to implement `Transactor`. `RunInTransaction` swaps the SQL executor to `*sql.Tx` so all query methods run inside the same transaction transparently |
 | `internal/repository/interface.go` | `Repository` and `Transactor` interface declarations — defined here, consumed by the domain layer |
-| `internal/repository/record/records.go` | Plain data-bag structs produced by SQL queries. `db` struct tags describe column names for row scanning. No domain logic lives here |
+| `internal/repository/record/records.go` | Plain data-bag structs produced by SQL queries. `gormdb` struct tags describe column names for row scanning. No domain logic lives here |
 | `internal/repository/dbquery/query.go` | Defines `QueryExecutor` (common interface for `*sql.DB` and `*sql.Tx`) and `RepositoryQueryExecutor` — the **only** type that holds and executes SQL, preventing any query method from accidentally bypassing a transaction |
 | `internal/domain/name/service-interface.go` | Declares `ServiceName` — the public use-case interface consumed by the handler layer. Adding a new use-case starts here |
 | `internal/domain/name/service.go` | Concrete `nameService`: validation (`maxNameLength = 255`), use-case orchestration |
@@ -132,7 +131,7 @@ go run ./cmd/webapi/ -c demo/config.yml
 Or with environment variables only (no config file):
 
 ```shell
-API_WEB_APIHOST=0.0.0.0:3000 API_DB_FILENAME=db/fantastic-gin.db go run ./cmd/webapi/
+API_WEB_APIHOST=0.0.0.0:3000 API_DB_FILENAME=gormdb/fantastic-gin.gormdb go run ./cmd/webapi/
 ```
 
 ---
@@ -153,8 +152,8 @@ For local development, pass `demo/config.yml` explicitly:
 go run ./cmd/webapi/ -c demo/config.yml
 ```
 
-> **Note:** without a config file the SQLite database defaults to `/tmp/decaf.db` and logs go to
-> `/tmp/dealch.log`. The `demo/config.yml` file sets these to `db/fantastic-gin.db` and `stdout`.
+> **Note:** without a config file the SQLite database defaults to `/tmp/decaf.gormdb` and logs go to
+> `/tmp/dealch.log`. The `demo/config.yml` file sets these to `gormdb/fantastic-gin.gormdb` and `stdout`.
 
 Key settings and their **built-in** defaults (alongside the values used by `demo/config.yml`):
 
@@ -165,7 +164,7 @@ Key settings and their **built-in** defaults (alongside the values used by `demo
 | `web.readtimeout` | `5s` | `5s` | Max time to read a full HTTP request |
 | `web.writetimeout` | `5s` | `5s` | Max time to write a full HTTP response |
 | `web.shutdowntimeout` | `5s` | `5s` | Graceful-shutdown deadline |
-| `db.filename` | `/tmp/decaf.db` | `db/fantastic-gin.db` | SQLite database file path |
+| `gormdb.filename` | `/tmp/decaf.gormdb` | `gormdb/fantastic-gin.gormdb` | SQLite database file path |
 | `logger.level` | `info` | `info` | Log level (`debug`, `info`, `warn`, `error`) |
 | `logger.file` | `/tmp/dealch.log` | `stdout` | Log output (`stderr`, `stdout`, or a file path) |
 
@@ -183,7 +182,7 @@ API_WEB_APIHOST=0.0.0.0:8080 API_LOGGER_LEVEL=debug go run ./cmd/webapi/ -c demo
 ## Database
 
 The app uses **SQLite** via [`go-sqlite3`](https://github.com/mattn/go-sqlite3) (CGo required).
-The `db/migrations/` directory is reserved for future SQL migration scripts; currently it is empty
+The `gormdb/migrations/` directory is reserved for future SQL migration scripts; currently it is empty
 and the schema must be pre-created in the SQLite file.
 
 ---
@@ -196,16 +195,6 @@ and the schema must be pre-created in the SQLite file.
 go build ./cmd/webapi/
 ```
 
-**With embedded WebUI** (requires Node.js container):
-
-```shell
-./open-node.sh
-# (inside the container)
-yarn run build-embed
-exit
-# (outside the container)
-go build -tags webui ./cmd/webapi/
-```
 
 ---
 
@@ -217,13 +206,6 @@ go build -tags webui ./cmd/webapi/
 go run ./cmd/webapi/ -c demo/config.yml
 ```
 
-**With the Vue.js WebUI** — open a second terminal:
-
-```shell
-./open-node.sh
-# (inside the container)
-yarn run dev
-```
 
 ---
 
@@ -240,15 +222,6 @@ Then commit everything under `vendor/`.
 
 ---
 
-## How to build for production
-
-```shell
-./open-node.sh
-# (inside the container)
-yarn run build-prod
-```
-
----
 
 ## License
 

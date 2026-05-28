@@ -5,7 +5,7 @@ It has no dependency on any framework or infrastructure concern (no Gin, no SQL,
 Domain errors are defined here so that service implementations and handlers share the same
 sentinel values without importing each other.
 */
-package name
+package nameservice
 
 import (
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository/record"

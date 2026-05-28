@@ -1,9 +1,10 @@
 package record
 
-// NameRecord is the raw data bag produced by name dbquery.
-// db tags drive automatic struct scanning (e.g. via sqlx).
-// It has no domain logic — the domain layer maps it into its own entities.
+// NameRecord maps to example_table.
 type NameRecord struct {
-	ID    int64  `db:"id"`
-	Value string `db:"name"`
+	ID    int64  `gorm:"primaryKey;autoIncrement"`
+	Value string `gorm:"column:name;not null;default:''"`
 }
+
+// TableName overrides GORM's default pluralised convention.
+func (*NameRecord) TableName() string { return "example_table" }
