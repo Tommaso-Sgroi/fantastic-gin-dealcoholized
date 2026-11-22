@@ -8,7 +8,7 @@ import (
 	"github.com/tommaso-sgroi/fantastic-gin-dealcoholized/internal/repository/record"
 )
 
-func (r *repo) DeleteNameByID(ctx context.Context, id int64) error {
+func (r repo) DeleteNameByID(ctx context.Context, id int64) error {
 	res := r.gormdb.WithContext(ctx).Delete(&record.NameRecord{}, id)
 	if res.Error != nil {
 		return fmt.Errorf("DeleteNameByID id=%d: %w", id, res.Error)

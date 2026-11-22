@@ -14,15 +14,15 @@ const maxNameLength = 255
 
 // nameService is the concrete implementation of NameService.
 type nameService struct {
-	db repository.Database // access the repository layer with transaction support
+	repo repository.Repository
 }
 
-// NewNameService returns a NameService backed by the provided Repository and Transactor.
-func New(repo repository.Database) ServiceName {
-	return &nameService{db: repo}
+// New returns a ServiceName backed by the provided Repository.
+func New(repo repository.Repository) ServiceName {
+	return &nameService{repo: repo}
 }
 func (s *nameService) GetByID(ctx context.Context, id int64) (Name, error) {
-	row, err := s.db.GetNameByID(ctx, id)
+	row, err := s.repo.GetNameByID(ctx, id)
 	if err != nil {
 		return Name{}, fmt.Errorf("cannot find %d in db: %w", id, err)
 	}
@@ -32,7 +32,7 @@ func (s *nameService) Create(ctx context.Context, value string) (Name, error) {
 	if err := validateName(value); err != nil {
 		return Name{}, fmt.Errorf("create: %w", err)
 	}
-	id, err := s.db.CreateName(ctx, value)
+	id, err := s.repo.CreateName(ctx, value)
 	if err != nil {
 		return Name{}, fmt.Errorf("create: %w", err)
 	}
@@ -42,13 +42,13 @@ func (s *nameService) UpdateByID(ctx context.Context, id int64, value string) (N
 	if err := validateName(value); err != nil {
 		return Name{}, fmt.Errorf("UpdateByID id=%d: %w", id, err)
 	}
-	if err := s.db.UpdateNameByID(ctx, id, value); err != nil {
+	if err := s.repo.UpdateNameByID(ctx, id, value); err != nil {
 		return Name{}, fmt.Errorf("UpdateByID id=%d: %w", id, err)
 	}
 	return nameFromRow(record.NameRecord{ID: id, Value: value}), nil
 }
 func (s *nameService) DeleteByID(ctx context.Context, id int64) error {
-	if err := s.db.DeleteNameByID(ctx, id); err != nil {
+	if err := s.repo.DeleteNameByID(ctx, id); err != nil {
 		return fmt.Errorf("DeleteByID id=%d: %w", id, err)
 	}
 	return nil
@@ -62,7 +62,7 @@ func (s *nameService) Replace(ctx context.Context, id int64, newValue string) (N
 		return Name{}, fmt.Errorf("replace id=%d: %w", id, err)
 	}
 	var created Name
-	err := s.db.RunInTransaction(ctx, func(ctx context.Context, repoTx repository.Repository) error {
+	err := s.repo.RunInTransaction(ctx, func(ctx context.Context, repoTx repository.Repository) error {
 		// Verify the entity exists before deleting — surfaces ErrNotFound cleanly.
 		if _, err := repoTx.GetNameByID(ctx, id); err != nil {
 			return fmt.Errorf("replace id=%d: %w", id, err)
@@ -70,6 +70,7 @@ func (s *nameService) Replace(ctx context.Context, id int64, newValue string) (N
 		if err := repoTx.DeleteNameByID(ctx, id); err != nil {
 			return fmt.Errorf("replace delete id=%d: %w", id, err)
 		}
+
 		newID, err := repoTx.CreateName(ctx, newValue)
 		if err != nil {
 			return fmt.Errorf("replace create: %w", err)
