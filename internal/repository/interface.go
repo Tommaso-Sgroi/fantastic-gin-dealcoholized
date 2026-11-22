@@ -12,9 +12,6 @@ type Repository interface {
 	UpdateNameByID(ctx context.Context, id int64, name string) error
 	CreateName(ctx context.Context, name string) (int64, error)
 	DeleteNameByID(ctx context.Context, id int64) error
-}
-
-// Transactor provides transaction support.
-type Transactor interface {
+	// RunInTransaction runs `fn` atomically; nested calls become savepoints.
 	RunInTransaction(ctx context.Context, fn func(context.Context, Repository) error) error
 }

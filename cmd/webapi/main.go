@@ -124,7 +124,7 @@ func run() error {
 		},
 	)
 	if err != nil {
-		logger.Error("Failed to connect to database: %v", slog.Any("err", err))
+		logger.Error("failed to connect to database", slog.Any("err", err))
 		return fmt.Errorf("connecting to database: %w", err)
 	}
 
@@ -141,29 +141,24 @@ func run() error {
 		}
 	}(dbconn)
 
-	// 2. Initialize concrete repository Database
-	db, err := repository.NewDatabase(gormDB)
-	if err != nil {
-		logger.Error("error creating AppDatabase", slog.Any("err", err))
-		return fmt.Errorf("creating AppDatabase: %w", err)
-	}
-
-	if err := dbconn.Ping(); err != nil {
-		logger.Error("error pinging AppDatabase", slog.Any("err", err))
-		return fmt.Errorf("pinging AppDatabase: %w", err)
-	}
-
-	// 3. Migrate the DB with goose
-	if err := db.MigrateUp(os.DirFS("db" + string(os.PathSeparator) + "migrations")); err != nil {
+	// 2. Migrate the DB with goose
+	if err := repository.Migrate(gormDB, os.DirFS("db/migrations")); err != nil {
 		logger.Error("error migrating database", slog.Any("err", err))
 		return fmt.Errorf("migrating database: %w", err)
+	}
+
+	// 3. Build the repository (implementation is hidden behind the interface)
+	repo, err := repository.New(gormDB)
+	if err != nil {
+		logger.Error("error creating repository", slog.Any("err", err))
+		return fmt.Errorf("creating repository: %w", err)
 	}
 
 	// Start (main) API server
 	logger.Info("initializing API server")
 
 	// Wire domain services
-	nameService := nameservice.New(db)
+	nameService := nameservice.New(repo)
 	healthService := health.NewHealthService(dbconn)
 
 	// Make a channel to listen for an interrupt or terminate signal from the OS.

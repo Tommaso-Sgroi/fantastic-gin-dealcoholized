@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (r *repo) GetNameByID(ctx context.Context, id int64) (record.NameRecord, error) {
+func (r repo) GetNameByID(ctx context.Context, id int64) (record.NameRecord, error) {
 	var rec record.NameRecord
 	err := r.gormdb.WithContext(ctx).First(&rec, id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
